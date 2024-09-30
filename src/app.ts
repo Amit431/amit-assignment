@@ -1,5 +1,5 @@
 import express from "express";
-import routes from "./routes";
+import { StatsRoutes } from "./routes";
 import config from "./config";
 
 const app = express();
@@ -9,7 +9,6 @@ const port = config.PORT as string;
 app.use(express.json());
 
 // Routes
-app.use("/api", routes);
-
+app.use("/api/v1", StatsRoutes);
 
 export default app;
