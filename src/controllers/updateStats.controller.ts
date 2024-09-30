@@ -38,6 +38,8 @@ export const handleUpdateStats = async (req: Request, res: Response) => {
 
         res.status(200).json({ message: "Stats updated successfully", data: result });
     } catch (error) {
+        console.log(error);
+        
         const { message } = error as Error;
         res.status(500).json({ message: "Error updating stats", error: message });
     }

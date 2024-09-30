@@ -122,7 +122,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
     await BallByBall.create({
         ballId,
         matchId,
-        overs: updatedOvers,
+        over: updatedOvers,
         ball: currentInning.balls + (updation.team?.balls || 0),
         strikerBatsmanId: strikerId,
         nonStrikerBatsmanId: nonStrikerId,

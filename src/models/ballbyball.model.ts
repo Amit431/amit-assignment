@@ -16,30 +16,35 @@ interface IBallByBall extends Document {
     commentary: string;
 }
 
-const BallByBallSchema = new Schema({
-    matchId: { type: Schema.Types.ObjectId, ref: "Match", required: true },
-    ballId: {
-        type: String,
-    },
-    over: { type: Number, required: true },
-    ball: { type: Number, required: true },
-    strikerBatsmanId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
-    nonStrikerBatsmanId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
-    outBatsmanId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
-    bowlerId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
-    runs: { type: Number, required: true },
-    extras: { type: String, default: "" },
-    ballType: {
-        type: String,
-        default: "",
-        enum: {
-            ...Object.values(BallType),
-            ...Object.values(NoBallScenarios),
-            ...Object.values(WideScenarios),
+const BallByBallSchema = new Schema(
+    {
+        matchId: { type: Schema.Types.ObjectId, ref: "Match", required: true },
+        ballId: {
+            type: String,
         },
+        over: { type: Number, required: true },
+        ball: { type: Number, required: true },
+        strikerBatsmanId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
+        nonStrikerBatsmanId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
+        outBatsmanId: { type: Schema.Types.ObjectId, ref: "Player" },
+        bowlerId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
+        runs: { type: Number, required: true },
+        extras: { type: String, default: "" },
+        ballType: {
+            type: String,
+            default: "",
+            enum: {
+                ...Object.values(BallType),
+                ...Object.values(NoBallScenarios),
+                ...Object.values(WideScenarios),
+            },
+        },
+        commentary: { type: String, required: true },
+        isWicket: Boolean,
     },
-    commentary: { type: String, required: true },
-    isWicket: Boolean,
-});
+    {
+        timestamps: true,
+    }
+);
 
 export default mongoose.model<IBallByBall>("BallByBall", BallByBallSchema);
