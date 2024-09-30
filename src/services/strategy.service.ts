@@ -27,7 +27,7 @@ function calculateNoBall(payload: IStatsPayload): IStatsOutputPayload {
             legbyes: payload.legbye ? payload.normal : 0,
         },
         bowler: {
-            runs: payload.normal + (payload.legbye ? 0 : 0) + (payload.byes ? 0 : 0), // No runs for leg byes and byes for bowler
+            runs: !(payload.legbye && payload.byes) ? payload.normal : 0, // No runs for leg byes and byes for bowler
             ballsFaced: 0, // No-balls do not count as balls faced for the bowler
             noballs: 1,
         },
