@@ -1,6 +1,5 @@
 import Match from "../models/match.model";
 import Player, { IPlayer, IPlayerDoc } from "../models/player.model";
-import BallByBall from "../models/ballbyball.model";
 import { calculateBattingStats, calculateBowlingStats } from "../utils/calculateStats.util";
 import { findBallTypeScenario } from "../utils/findBallTypeScenario.util";
 import { partition } from "lodash";
@@ -10,6 +9,7 @@ import { Types } from "mongoose";
 import Inning from "../models/inning.model";
 import addOvers from "../utils/addOvers.util";
 import { BallType } from "../interface";
+import BallByBall from "../models/ballbyball.model";
 
 export const updateStats = async (input: IStatsReqPayload) => {
     const { matchId, strikerId, nonStrikerId, bowlerId, payload } = input;
@@ -43,7 +43,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
     const updation = strategy(payload);
 
     // Update innings document
-    const currentInning = await Inning.findOne({ matchId: matchId });
+    const currentInning = await Inning.findOne({ matchId: matchId, status: "In Progress" });
 
     if (!currentInning) throw new Error("No inning found.");
 
@@ -57,6 +57,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
             $inc: {
                 runs: updation.team?.runs || 0,
                 balls: updation.team?.balls || 0,
+                deliveries: 1,
             },
             $set: {
                 overs: updatedOvers,
@@ -65,8 +66,6 @@ export const updateStats = async (input: IStatsReqPayload) => {
     );
 
     const isStriker = (updation.team?.runs || 0) % 2 === 0 ? true : false;
-    // const isStrikerLegBye = (updation.batsman?.legbyes || 0) % 2 === 0 ? true : false;
-    // const isStrikerByes = (updation.batsman?.byes || 0) % 2 === 0 ? true : false;
 
     // Update batsman stats
     await Player.updateOne(
@@ -110,6 +109,31 @@ export const updateStats = async (input: IStatsReqPayload) => {
             },
         }
     );
+
+    // Example values for inning, over, and delivery
+    const inning = currentInning.inningsType === "first" ? 1 : 2; // or however you define innings
+    const oversArray = updatedOvers.split("."); // Splitting "3.2" into ["3", "2"]
+    const overComplete = parseInt(oversArray[0], 10); // Total complete overs
+    const balls = parseInt(oversArray[1], 10); // Balls in the current over
+    const delivery = currentInning.deliveries + 1; // Assuming this is the next delivery (incrementing the balls)
+
+    const ballId = `${inning}.${overComplete}.${balls}.${delivery}`;
+
+    await BallByBall.create({
+        ballId,
+        matchId,
+        overs: updatedOvers,
+        ball: currentInning.balls + (updation.team?.balls || 0),
+        strikerBatsmanId: strikerId,
+        nonStrikerBatsmanId: nonStrikerId,
+        bowlerId: bowlerId,
+        runs: updation.team.runs,
+        extras: updation.team.runs,
+        ballType: ballType,
+        commentary: `${updation.team.runs} ${ballType} ${
+            ballType === BallType.OVERTHROW ? payload.overthrow : ""
+        } scored`,
+    });
 
     return { batsman, bowler, match };
 };

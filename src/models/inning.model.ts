@@ -10,14 +10,16 @@ export interface IInning {
     overs?: string; // Overs played (optional)
     inningsType: "first" | "second"; // To differentiate between first or second innings
     matchId: string; // Reference to the match
-    balls: Number;
-    wides: Number;
-    noballs: Number;
-    legbyes: Number;
-    byes: Number;
-    overthrows: Number;
+    balls: number;
+    wides: number;
+    noballs: number;
+    legbyes: number;
+    byes: number;
+    overthrows: number;
     playingXI: Array<typeof Schema.Types.ObjectId | string> | IPlayer[];
     bowlers: Array<typeof Schema.Types.ObjectId | string> | IPlayer[];
+    status: "In Progress" | "Completed" | "Pending";
+    deliveries: number;
 }
 
 interface IInningDoc extends IInning, Document {}
@@ -58,6 +60,7 @@ const InningSchema: Schema = new Schema(
         matchId: {
             type: mongoose.Schema.Types.ObjectId,
             required: true,
+            index: 1,
         },
         wides: {
             type: Number,
@@ -85,7 +88,7 @@ const InningSchema: Schema = new Schema(
                     type: Schema.Types.ObjectId,
                 },
             ],
-            ref: 'Player'
+            ref: "Player",
         },
         bowlers: {
             type: [
@@ -93,7 +96,15 @@ const InningSchema: Schema = new Schema(
                     type: Schema.Types.ObjectId,
                 },
             ],
-            ref: 'Player'
+            ref: "Player",
+        },
+        status: {
+            type: String,
+            enum: ["In Progress", "Completed", "Pending"],
+        },
+        deliveries: {
+            type: Number,
+            default: 0,
         },
     },
     { timestamps: true }
@@ -101,6 +112,7 @@ const InningSchema: Schema = new Schema(
 
 InningSchema.index({
     matchId: 1,
+    status: 1,
 });
 
 // Create the Inning model
