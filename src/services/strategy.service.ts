@@ -77,6 +77,26 @@ const Strategy = {
 
         return stats;
     },
+    [BallType.OVERTHROW]: function (payload: IStatsPayload): IStatsOutputPayload {
+        const stats: IStatsOutputPayload = {
+            team: {
+                runs: payload.overthrow + payload.normal, // Add 1 for wide runs
+                overs: "0.1",
+                balls: 1,
+                overthrows: payload.overthrow,
+            },
+            batsman: {
+                runs: payload.normal + payload.overthrow,
+                ballsFaced: 1,
+            }, // No runs added to batsman for a wide
+            bowler: {
+                runs: payload.overthrow + payload.normal, // Count runs for wide
+                ballsFaced: 1, // Counts as a delivery faced
+            },
+        };
+
+        return stats;
+    },
 
     [BallType.NO_BALL]: calculateNoBall,
     [NoBallScenarios.LEGBYE]: calculateNoBall,
@@ -129,8 +149,6 @@ const Strategy = {
     },
 
     [WideScenarios.OVERTHROW]: function (payload: IStatsPayload): IStatsOutputPayload {
-        console.log(payload);
-
         const stats: IStatsOutputPayload = {
             team: {
                 runs: WIDE_RUNS + payload.overthrow + payload.normal, // Add wide runs and overthrow runs

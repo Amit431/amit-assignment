@@ -7,7 +7,7 @@ export enum NoBallScenarios {
 // Enum for different types of Wides
 export enum WideScenarios {
     NORMAL = "wide", // Regular wide delivery
-    OVERTHROW = "overthrow", // Wide delivery leading to an overthrow
+    OVERTHROW = "wide + overthrow", // Wide delivery leading to an overthrow
 }
 
 // Enum to categorize different ball types
