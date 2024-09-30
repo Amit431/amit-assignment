@@ -23,11 +23,6 @@ export const findBallTypeScenario = (statsPayload: IStatsPayload): string => {
         return BallType.NO_BALL;
     }
 
-    // Check for Overthrow scenario (if it's a run scored on an overthrow)
-    if (overthrow > 0) {
-        return BallType.OVERTHROW; // Overthrow scenario
-    }
-
     // Check for Leg Bye
     if (legbye) {
         return BallType.LEG_BYE; // Just Leg Bye
@@ -36,6 +31,11 @@ export const findBallTypeScenario = (statsPayload: IStatsPayload): string => {
     // Check for Bye
     if (byes) {
         return BallType.BYE; // Just Bye
+    }
+
+    // Check for Overthrow scenario (if it's a run scored on an overthrow)
+    if (overthrow > 0) {
+        return BallType.OVERTHROW; // Overthrow scenario
     }
 
     // If no conditions are met, it is a normal delivery
