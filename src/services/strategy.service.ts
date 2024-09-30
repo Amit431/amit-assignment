@@ -60,15 +60,17 @@ const Strategy = {
     [BallType.WIDE]: function (payload: IStatsPayload): IStatsOutputPayload {
         const stats: IStatsOutputPayload = {
             team: {
-                runs: WIDE_RUNS, // Add 1 for wide runs
-                overs: "0.1",
-                balls: 1,
+                runs: WIDE_RUNS + payload.normal, // Add 1 for wide runs
+                overs: "0.0",
+                balls: 0,
                 wides: 1, // Count wide in extras
             },
-            batsman: {}, // No runs added to batsman for a wide
+            batsman: {
+                byes: payload.normal,
+            }, // No runs added to batsman for a wide
             bowler: {
-                runs: WIDE_RUNS, // Count runs for wide
-                ballsFaced: 1, // Counts as a delivery faced
+                runs: WIDE_RUNS + payload.normal, // Count runs for wide
+                ballsFaced: 0, // Counts as a delivery faced
                 wides: 1,
             },
         };
@@ -119,7 +121,7 @@ const Strategy = {
             bowler: {
                 runs: 0, // No runs added to bowler for bye
                 ballsFaced: 1, // Counts as a delivery faced
-                byes: payload.normal // Count byes in extras for the bowler
+                byes: payload.normal, // Count byes in extras for the bowler
             },
         };
 
@@ -127,9 +129,11 @@ const Strategy = {
     },
 
     [WideScenarios.OVERTHROW]: function (payload: IStatsPayload): IStatsOutputPayload {
+        console.log(payload);
+
         const stats: IStatsOutputPayload = {
             team: {
-                runs: WIDE_RUNS + payload.overthrow, // Add wide runs and overthrow runs
+                runs: WIDE_RUNS + payload.overthrow + payload.normal, // Add wide runs and overthrow runs
                 overs: "0.1",
                 balls: 1,
                 wides: 1,
@@ -137,7 +141,7 @@ const Strategy = {
             },
             batsman: {},
             bowler: {
-                runs: WIDE_RUNS + payload.overthrow, // Count the wide and overthrow runs
+                runs: WIDE_RUNS + payload.overthrow + +payload.normal, // Count the wide and overthrow runs
                 ballsFaced: 1, // Counts as a delivery faced
                 wides: 1,
                 overthrows: payload.overthrow, // Count overthrow in extras for the bowler

@@ -64,9 +64,9 @@ export const updateStats = async (input: IStatsReqPayload) => {
         }
     );
 
-    const isStriker = (updation.batsman?.runs || 0) % 2 === 0 ? true : false;
-    const isStrikerLegBye = (updation.batsman?.legbyes || 0) % 2 === 0 ? true : false;
-    const isStrikerByes = (updation.batsman?.byes || 0) % 2 === 0 ? true : false;
+    const isStriker = (updation.team?.runs || 0) % 2 === 0 ? true : false;
+    // const isStrikerLegBye = (updation.batsman?.legbyes || 0) % 2 === 0 ? true : false;
+    // const isStrikerByes = (updation.batsman?.byes || 0) % 2 === 0 ? true : false;
 
     // Update batsman stats
     await Player.updateOne(
@@ -80,7 +80,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
                 byes: updation.batsman?.byes || 0,
             },
             $set: {
-                isStriker: ballType === BallType.NORMAL ? isStriker : isStrikerLegBye,
+                isStriker: isStriker,
             },
         }
     );
@@ -91,7 +91,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
         },
         {
             $set: {
-                isStriker: ballType === BallType.NORMAL ? isStriker : !isStrikerLegBye,
+                isStriker: !isStriker,
             },
         }
     );
