@@ -1,23 +1,21 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, mongo } from "mongoose";
 
 interface IMatch extends Document {
     teamA: string;
     teamB: string;
     tossWinner: string;
-    overs: number;
+    overs: string;
     battingTeam: string;
     bowlingTeam: string;
     battingTeamScore: number;
     bowlingTeamScore: number;
-    players: Array<{ playerId: mongoose.Types.ObjectId; team: string }>;
 }
 
 const MatchSchema = new Schema({
-    teamA: { type: String, required: true },
-    teamB: { type: String, required: true },
+    teamA: { type: mongoose.Schema.Types.ObjectId, required: true },
+    teamB: { type: mongoose.Schema.Types.ObjectId, required: true },
     tossWinner: { type: String, required: true },
-    overs: { type: Number, required: true },
-    players: [{ playerId: { type: Schema.Types.ObjectId, ref: "Player" }, team: String }],
+    overs: { type: String, required: true },
 });
 
 export default mongoose.model<IMatch>("Match", MatchSchema);

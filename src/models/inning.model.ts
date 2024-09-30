@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
+import { IPlayer } from "./player.model";
 
 // Define the interface for the Inning
 export interface IInning {
@@ -15,6 +16,8 @@ export interface IInning {
     legbyes: Number;
     byes: Number;
     overthrows: Number;
+    playingXI: Array<typeof Schema.Types.ObjectId | string> | IPlayer[];
+    bowlers: Array<typeof Schema.Types.ObjectId | string> | IPlayer[];
 }
 
 interface IInningDoc extends IInning, Document {}
@@ -75,6 +78,22 @@ const InningSchema: Schema = new Schema(
         overthrows: {
             type: Number,
             default: 0,
+        },
+        playingXI: {
+            type: [
+                {
+                    type: Schema.Types.ObjectId,
+                },
+            ],
+            ref: 'Player'
+        },
+        bowlers: {
+            type: [
+                {
+                    type: Schema.Types.ObjectId,
+                },
+            ],
+            ref: 'Player'
         },
     },
     { timestamps: true }
