@@ -12,7 +12,7 @@ export const findBallTypeScenario = (statsPayload: IStatsPayload): string => {
         if (byes) {
             return NoBallScenarios.BYE; // No Ball + Bye Runs
         }
-        return NoBallScenarios.NORMAL; // Just No Ball
+        return BallType.NO_BALL
     }
 
     // Check for Wide scenario

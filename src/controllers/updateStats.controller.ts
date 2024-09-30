@@ -16,19 +16,22 @@ export interface IStatsPayload {
 
 export interface IStatsReqPayload {
     matchId: string;
-    batsmanId: string;
+    strikerId: string;
+    nonStrikerId: string;
     bowlerId: string;
     payload: IStatsPayload;
 }
 
 export const handleUpdateStats = async (req: Request, res: Response) => {
     try {
-        const { matchId, batsmanId, bowlerId, payload } = req.body as IStatsReqPayload;
+        const { matchId } = req.params;
+        const { strikerId, nonStrikerId, bowlerId, payload } = req.body as IStatsReqPayload;
 
         // Call the service function to update the stats
         const result = await updateStats({
             matchId,
-            batsmanId,
+            strikerId,
+            nonStrikerId,
             bowlerId,
             payload,
         });
@@ -69,7 +72,6 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
 
         // Reduce over the innings array and populate the scorecard
         innings.forEach((inning) => {
-            console.log(inning.bowlers);
             if (inning.inningsType === "first") {
                 scorecard.teamA = inning;
             } else if (inning.inningsType === "second") {
@@ -79,7 +81,7 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
             if (inning.playingXI?.length > 0) {
                 scorecard.strikerBatsman = (inning.playingXI.find((player) => (player as IPlayer).isStriker) ||
                     {}) as Partial<IPlayer>;
-                scorecard.nonStrikerBatsman = (inning.playingXI.find((player) => (player as IPlayer).isNonStriker) ||
+                scorecard.nonStrikerBatsman = (inning.playingXI.find((player) => !(player as IPlayer).isStriker) ||
                     {}) as Partial<IPlayer>;
             }
 
@@ -88,7 +90,9 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
 
                 scorecard.bowler = ({
                     ...bowler,
-                    overs: `${(bowler.ballsFaced || 0) / 6}.${(bowler.ballsFaced || 0) % 6}`,
+                    overs: `${bowler.ballsFaced < 6 ? 0 : Math.trunc((bowler.ballsFaced || 0) / 6)}.${
+                        (bowler.ballsFaced || 0) % 6
+                    }`,
                 } || {}) as Partial<IPlayer>;
             }
         });
