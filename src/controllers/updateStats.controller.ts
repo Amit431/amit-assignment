@@ -136,7 +136,7 @@ export const EditStats = async (req: Request, res: Response) => {
 
         // Fetch the existing ball data from BallByBall
         const previousBall = await BallByBall.findById(ballId);
-        console.log(previousBall);
+        // console.log(previousBall);
 
         if (!previousBall) throw new Error("Ball not found.");
 
@@ -175,8 +175,8 @@ export const EditStats = async (req: Request, res: Response) => {
         const isBatsmanStrikeSwap =
             ((newTeamStats.runs || 0) % 2 === 0 && previousBall.runs % 2 !== 0) ||
             ((newTeamStats.runs || 0) % 2 !== 0 && previousBall.runs % 2 === 0);
-        console.log({ isBatsmanStrikeSwap });
-        console.log({ nR: newTeamStats.runs, pB: previousBall.runs });
+        // console.log({ isBatsmanStrikeSwap });
+        // console.log({ nR: newTeamStats.runs, pB: previousBall.runs });
 
         const battingStats: {
             striker: {
@@ -251,6 +251,16 @@ export const EditStats = async (req: Request, res: Response) => {
                     };
                 }
             }
+            if (isBatsmanStrikeSwap && index === 0) {
+                if ((newStats.team?.runs || 0) % 2 !== 0) {
+                    const striker = ball.strikerBatsmanId;
+                    strikerBatsmanId = ball.nonStrikerBatsmanId;
+                    nonStrikerBatsmanId = striker;
+                }
+            }
+
+            console.log(isBatsmanStrikeSwap, strikerBatsmanId, nonStrikerBatsmanId);
+
             const mapString: { [key: string]: string } = {
                 normal: "runs",
             };
@@ -265,12 +275,8 @@ export const EditStats = async (req: Request, res: Response) => {
                       }
                     : {}),
                 ...(ballByBallUpdatedOver ? { over: ballByBallUpdatedOver } : {}),
-                ...(isBatsmanStrikeSwap && index !== 0
-                    ? {
-                          strikerBatsmanId,
-                          nonStrikerBatsmanId,
-                      }
-                    : {}),
+                ...(strikerBatsmanId ? { strikerBatsmanId } : {}),
+                ...(nonStrikerBatsmanId ? { nonStrikerBatsmanId } : {}),
                 ...(index === 0
                     ? {
                           strikerBatsmanStats: {
@@ -289,16 +295,28 @@ export const EditStats = async (req: Request, res: Response) => {
                     : {}),
             };
 
-            console.log(updatedBall, finalInningScore, finalOvers);
+            // console.log(updatedBall, finalInningScore, finalOvers);
 
             await BallByBall.findByIdAndUpdate(ballId, updatedBall);
         });
 
-        console.log(battingStats);
+        // console.log(battingStats);
 
         const isBallUp = Number(finalOvers) > Number(currentInning.overs);
         const isBallDown = Number(finalOvers) < Number(currentInning.overs);
-        if (!isBatsmanStrikeSwap) {
+
+        if (!isBatsmanStrikeSwap || balls.length === 1) {
+            await Player.updateOne(
+                {
+                    _id: previousBall.nonStrikerBatsmanId,
+                },
+                {
+                    $set: {
+                        isStriker: (newStats.team?.runs || 0) % 2 !== 0 ? true : false,
+                    },
+                }
+            );
+
             await Player.updateOne(
                 {
                     _id: previousBall.strikerBatsmanId,
@@ -309,13 +327,11 @@ export const EditStats = async (req: Request, res: Response) => {
                         ballsFaced: isBallUp ? 1 : isBallDown ? -1 : 0,
                     },
                     $set: {
-                        isStriker: true,
+                        isStriker: (newStats.team?.runs || 0) % 2 !== 0 ? false : true,
                     },
                 }
             );
         } else {
-            console.log(previousBall.strikerBatsmanId, previousBall.nonStrikerBatsmanId);
-            
             await Player.updateOne(
                 {
                     _id: previousBall.strikerBatsmanId,
