@@ -258,17 +258,15 @@ export const EditStats = async (req: Request, res: Response) => {
                 strikerBatsmanName = ball.nonStrikerBatsmanName;
                 nonStrikerBatsmanName = strikerName;
 
-                const prevLegalRuns = (prevBall.runs || 0) - (prevBall.payload.wide || prevBall.payload.noball ? 1 : 0);
-
-                if (prevLegalRuns % 2 === 0) {
-                    battingStats.striker = {
-                        runs: (battingStats.striker?.runs || 0) + ball.strikerBatsmanStats.runs,
-                        ballsFaced: (battingStats.striker?.ballsFaced || 0) + ball.strikerBatsmanStats.balls,
-                    };
-                } else {
+                if (previousBall.strikerBatsmanId.toString() === strikerBatsmanId.toString()) {
                     battingStats.nonstriker = {
                         runs: (battingStats.nonstriker?.runs || 0) + ball.strikerBatsmanStats.runs,
                         ballsFaced: (battingStats.nonstriker?.ballsFaced || 0) + ball.strikerBatsmanStats.balls,
+                    };
+                } else {
+                    battingStats.striker = {
+                        runs: (battingStats.striker?.runs || 0) + ball.strikerBatsmanStats.runs,
+                        ballsFaced: (battingStats.striker?.ballsFaced || 0) + ball.strikerBatsmanStats.balls,
                     };
                 }
             }
@@ -317,6 +315,10 @@ export const EditStats = async (req: Request, res: Response) => {
 
         const isBallUp = Number(finalOvers) > Number(currentInning.overs);
         const isBallDown = Number(finalOvers) < Number(currentInning.overs);
+
+        console.log("====================================");
+        console.log(battingStats);
+        console.log("====================================");
 
         if (!isBatsmanStrikeSwap || balls.length === 1) {
             await Player.updateOne(
