@@ -50,6 +50,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
     // Prepare new overs
     const newOvers: string = currentInning.overs || "0.0"; // Default to '0.0' if no inning found
     const updatedOvers = addOvers(newOvers, updation.team?.overs || "0.0");
+    const isOverComplete = updatedOvers.endsWith(".0");
 
     await Inning.updateOne(
         { matchId: matchId },
@@ -65,7 +66,8 @@ export const updateStats = async (input: IStatsReqPayload) => {
         }
     );
 
-    const isStriker = (updation.team?.runs || 0) % 2 === 0 ? true : false;
+    let isStriker = (updation.team?.runs || 0) % 2 === 0 ? true : false;
+    isStriker = isOverComplete ? !isStriker : isStriker;
 
     // Update batsman stats
     await Player.updateOne(
@@ -84,7 +86,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
         }
     );
 
-    await Player.updateOne(
+    const nonStrikerBatsStats = await Player.findOneAndUpdate(
         {
             _id: nonStrikerId,
         },
@@ -125,8 +127,6 @@ export const updateStats = async (input: IStatsReqPayload) => {
         normal: "runs",
     };
 
-    console.log(updatedOversV2);
-
     await BallByBall.create({
         ballId,
         matchId,
@@ -141,6 +141,12 @@ export const updateStats = async (input: IStatsReqPayload) => {
         commentary: `${updation.team.runs} ${ballType !== BallType.NORMAL ? "runs" : ""} (${
             mapString[ballType as string] || ballType
         } ${ballType === BallType.OVERTHROW ? payload.overthrow : ""}) scored`,
+        payload,
+        isStrikerChanged: !isStriker,
+        strikerBatsmanStats: {
+            runs: updation.batsman?.runs,
+            balls: updation.batsman?.ballsFaced || 0,
+        },
     });
 
     return { batsman, bowler, match };

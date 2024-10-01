@@ -1,10 +1,10 @@
-function addOvers(overs1: string, overs2: string, ballsPerOver: number = 6): string {
+function addOvers(overs1: string, overs2: string, isReverse: boolean = false, ballsPerOver: number = 6): string {
     const [overs1Count, balls1Count] = overs1.split(".").map(Number);
     const [overs2Count, balls2Count] = overs2.split(".").map(Number);
 
     // Convert total overs and balls to total balls
     const totalBalls1 = overs1Count * ballsPerOver + balls1Count;
-    const totalBalls2 = overs2Count * ballsPerOver + balls2Count;
+    const totalBalls2 = (overs2Count * ballsPerOver + balls2Count) * (isReverse ? -1 : 1);
 
     // Sum total balls
     const totalBalls = totalBalls1 + totalBalls2;
@@ -16,13 +16,18 @@ function addOvers(overs1: string, overs2: string, ballsPerOver: number = 6): str
     // Return the result in overs format
     return `${totalOvers}.${remainingBalls}`;
 }
-export function addOversV2(overs1: string, overs2: string, ballsPerOver: number = 6): string {
+export function addOversV2(
+    overs1: string,
+    overs2: string,
+    isReverse: boolean = false,
+    ballsPerOver: number = 6
+): string {
     const [overs1Count, balls1Count] = overs1.split(".").map(Number);
     const [overs2Count, balls2Count] = overs2.split(".").map(Number);
 
     // Convert total overs and balls to total balls
     const totalBalls1 = overs1Count * ballsPerOver + balls1Count;
-    const totalBalls2 = overs2Count * ballsPerOver + balls2Count;
+    const totalBalls2 = overs2Count * ballsPerOver + balls2Count * (isReverse ? -1 : 1);
 
     // Sum total balls
     const totalBalls = totalBalls1 + totalBalls2;

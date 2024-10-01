@@ -5,6 +5,10 @@ import Inning, { IInning } from "../models/inning.model";
 import Player, { IPlayer } from "../models/player.model";
 import _ from "lodash";
 import BallByBall, { IBallByBall } from "../models/ballbyball.model";
+import { findBallTypeScenario } from "../utils/findBallTypeScenario.util";
+import Strategy, { IStatsOutputPayload } from "../services/strategy.service";
+import addOvers, { addOversV2 } from "../utils/addOvers.util";
+import { BallType } from "../interface";
 
 export interface IStatsPayload {
     normal: number;
@@ -102,7 +106,12 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
             }
         });
 
-        const ballbyball = await BallByBall.find({}).select("commentary over").sort({_id: -1}).limit(20).lean().exec();
+        const ballbyball = await BallByBall.find({})
+            .select("commentary over")
+            .sort({ _id: -1 })
+            .limit(20)
+            .lean()
+            .exec();
 
         scorecard.ballbyball = ballbyball;
 
@@ -111,6 +120,263 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
         console.log("====================================");
         console.log(error);
         console.log("====================================");
+        const { message } = error as Error;
+        res.status(500).json({ message: "Error updating stats", error: message });
+    }
+};
+
+export const EditStats = async (req: Request, res: Response) => {
+    try {
+        const { matchId, ballId } = req.params;
+        const { payload } = req.body as IStatsReqPayload;
+
+        // Fetch the current inning
+        const currentInning = await Inning.findOne({ matchId: matchId, status: "In Progress" });
+        if (!currentInning) throw new Error("No inning found.");
+
+        // Fetch the existing ball data from BallByBall
+        const previousBall = await BallByBall.findById(ballId);
+        console.log(previousBall);
+
+        if (!previousBall) throw new Error("Ball not found.");
+
+        // Reset::: Run the reverse strategy to undo the previous ball impact
+        const previousBallType = previousBall.ballType;
+        const previousPayload: IStatsPayload = previousBall.payload;
+        const isPreviousStrikerChanged = previousBall.isStrikerChanged;
+
+        const previousUpdation = Strategy[previousBallType](previousPayload);
+        const reverseTeamStats = previousUpdation.team || {};
+
+        // Subtract previous stats from the current inning's score, overs, etc.
+        const updatedInningScore = (currentInning.runs || 0) - (reverseTeamStats.runs || 0);
+        const updatedOvers = addOvers(currentInning.overs || "0.0", `${reverseTeamStats.overs || "0.0"}`, true);
+
+        // New Changes:: Apply the new ball data strategy
+        const newBallType = findBallTypeScenario(payload);
+        const newStats = Strategy[newBallType](payload);
+        const newTeamStats = newStats.team || {};
+
+        // Update the inning with Score & Over
+        const finalInningScore = updatedInningScore + (newTeamStats.runs || 0); // new Score
+        const finalOvers = addOversV2(updatedOvers, newTeamStats.overs || "0.0");
+
+        // Query to find balls after the edited ball
+        const balls = await BallByBall.find({
+            ball: {
+                $gte: previousBall.ball,
+            },
+            matchId: matchId,
+        }).sort({ ball: 1 });
+
+        let overProgress: 1 | -1 | 0 = 0;
+        // for add 1 and for substract -1 and 0 for as it is
+
+        const isBatsmanStrikeSwap =
+            ((newTeamStats.runs || 0) % 2 === 0 && previousBall.runs % 2 !== 0) ||
+            ((newTeamStats.runs || 0) % 2 !== 0 && previousBall.runs % 2 === 0);
+        console.log({ isBatsmanStrikeSwap });
+        console.log({ nR: newTeamStats.runs, pB: previousBall.runs });
+
+        const battingStats: {
+            striker: {
+                runs?: number;
+                ballsFaced?: number;
+                totalRuns?: number;
+                totalBallsFaced?: number;
+            };
+            nonstriker: {
+                runs?: number;
+                ballsFaced?: number;
+                totalRuns?: number;
+                totalBallsFaced?: number;
+            };
+        } = {
+            striker: {},
+            nonstriker: {},
+        };
+
+        balls.forEach(async (ball, index) => {
+            const ballId = ball._id;
+            let ballByBallUpdatedOver = null;
+            let strikerBatsmanId = null;
+            let nonStrikerBatsmanId = null;
+
+            // Update Over
+            if (previousBallType !== newBallType && index === 0) {
+                if (
+                    [BallType.BYE, BallType.LEG_BYE, BallType.NORMAL, BallType.OVERTHROW].includes(
+                        previousBallType as (typeof BallType)[keyof typeof BallType]
+                    ) &&
+                    ![BallType.BYE, BallType.LEG_BYE, BallType.NORMAL, BallType.OVERTHROW].includes(
+                        newBallType as (typeof BallType)[keyof typeof BallType]
+                    )
+                ) {
+                    ballByBallUpdatedOver = addOversV2(previousBall.over || "0.0", "0.1", true);
+                    overProgress = 1;
+                } else if (
+                    [BallType.BYE, BallType.LEG_BYE, BallType.NORMAL, BallType.OVERTHROW].includes(
+                        newBallType as (typeof BallType)[keyof typeof BallType]
+                    ) &&
+                    ![BallType.BYE, BallType.LEG_BYE, BallType.NORMAL, BallType.OVERTHROW].includes(
+                        previousBallType as (typeof BallType)[keyof typeof BallType]
+                    )
+                ) {
+                    ballByBallUpdatedOver = addOversV2(previousBall.over || "0.0", "0.1", false);
+                    overProgress = -1;
+                } else {
+                    overProgress = 0;
+                }
+            } else if (overProgress === 1) {
+                ballByBallUpdatedOver = addOversV2(ball.over || "0.0", "0.1", true);
+            } else if (overProgress === -1) {
+                ballByBallUpdatedOver = addOversV2(ball.over || "0.0", "0.1", false);
+            }
+
+            // Update Striker
+            if (isBatsmanStrikeSwap && index !== 0) {
+                const striker = ball.strikerBatsmanId;
+                strikerBatsmanId = ball.nonStrikerBatsmanId;
+                nonStrikerBatsmanId = striker;
+
+                if (index % 2 === 0) {
+                    battingStats.striker = {
+                        runs: (battingStats.striker?.runs || 0) + ball.strikerBatsmanStats.runs,
+                        ballsFaced: (battingStats.striker?.ballsFaced || 0) + ball.strikerBatsmanStats.balls,
+                    };
+                } else {
+                    battingStats.nonstriker = {
+                        runs: (battingStats.nonstriker?.runs || 0) + ball.strikerBatsmanStats.runs,
+                        ballsFaced: (battingStats.nonstriker?.ballsFaced || 0) + ball.strikerBatsmanStats.balls,
+                    };
+                }
+            }
+            const mapString: { [key: string]: string } = {
+                normal: "runs",
+            };
+
+            // Update the ball in BallByBall collection
+            const updatedBall = {
+                ...(index === 0
+                    ? {
+                          ballType: newBallType,
+                          runs: payload.normal,
+                          payload,
+                      }
+                    : {}),
+                ...(ballByBallUpdatedOver ? { over: ballByBallUpdatedOver } : {}),
+                ...(isBatsmanStrikeSwap && index !== 0
+                    ? {
+                          strikerBatsmanId,
+                          nonStrikerBatsmanId,
+                      }
+                    : {}),
+                ...(index === 0
+                    ? {
+                          strikerBatsmanStats: {
+                              runs: newStats.batsman?.runs || 0,
+                              balls: newStats.batsman?.ballsFaced || 0,
+                          },
+                      }
+                    : {}),
+
+                ...(index === 0
+                    ? {
+                          commentary: `${newStats.team.runs} ${newBallType !== BallType.NORMAL ? "runs" : ""} (${
+                              mapString[newBallType as string] || newBallType
+                          } ${newBallType === BallType.OVERTHROW ? payload.overthrow : ""}) scored`,
+                      }
+                    : {}),
+            };
+
+            console.log(updatedBall, finalInningScore, finalOvers);
+
+            await BallByBall.findByIdAndUpdate(ballId, updatedBall);
+        });
+
+        console.log(battingStats);
+
+        const isBallUp = Number(finalOvers) > Number(currentInning.overs);
+        const isBallDown = Number(finalOvers) < Number(currentInning.overs);
+        if (!isBatsmanStrikeSwap) {
+            await Player.updateOne(
+                {
+                    _id: previousBall.strikerBatsmanId,
+                },
+                {
+                    $inc: {
+                        runs: (newStats.batsman?.runs || 0) - (previousUpdation.batsman?.runs || 0),
+                        ballsFaced: isBallUp ? 1 : isBallDown ? -1 : 0,
+                    },
+                    $set: {
+                        isStriker: true,
+                    },
+                }
+            );
+        } else {
+            console.log(previousBall.strikerBatsmanId, previousBall.nonStrikerBatsmanId);
+            
+            await Player.updateOne(
+                {
+                    _id: previousBall.strikerBatsmanId,
+                },
+                {
+                    $inc: {
+                        runs:
+                            (battingStats.nonstriker.runs || 0) -
+                            (battingStats.striker.runs || 0) +
+                            ((newStats.batsman?.runs || 0) - (previousUpdation.batsman?.runs || 0)),
+                        ballsFaced: (battingStats.nonstriker?.ballsFaced || 0) - (battingStats.striker.ballsFaced || 0),
+                    },
+                    $set: {
+                        isStriker: false,
+                    },
+                }
+            );
+            await Player.updateOne(
+                {
+                    _id: previousBall.nonStrikerBatsmanId,
+                },
+                {
+                    $inc: {
+                        runs: (battingStats.striker.runs || 0) - (battingStats.nonstriker.runs || 0),
+                        ballsFaced: (battingStats.striker?.ballsFaced || 0) - (battingStats.nonstriker.ballsFaced || 0),
+                    },
+                    $set: {
+                        isStriker: true,
+                    },
+                }
+            );
+        }
+        await Player.updateOne(
+            {
+                _id: previousBall.bowlerId,
+            },
+            {
+                $inc: {
+                    runs: (newStats.bowler?.runs || 0) - (previousUpdation.bowler?.runs || 0),
+                    ballsFaced: isBallUp ? 1 : isBallDown ? -1 : 0,
+                },
+            }
+        );
+
+        // // Update the inning document with recalculated stats
+        await Inning.updateOne(
+            { matchId: matchId },
+            {
+                $set: {
+                    runs: finalInningScore,
+                    overs: finalOvers,
+                },
+                $inc: {
+                    balls: newTeamStats.balls || 0, // Update the balls faced
+                },
+            }
+        );
+
+        res.json({ message: "Ball edited successfully", ballId });
+    } catch (error) {
+        console.log(error);
         const { message } = error as Error;
         res.status(500).json({ message: "Error updating stats", error: message });
     }

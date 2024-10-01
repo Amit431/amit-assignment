@@ -16,8 +16,8 @@ function calculateNoBall(payload: IStatsPayload): IStatsOutputPayload {
     const stats: IStatsOutputPayload = {
         team: {
             runs: NO_BALL_RUNS + payload.normal,
-            overs: "0.1",
-            balls: 1,
+            overs: "0.0",
+            balls: 0,
             noballs: 1,
         },
         batsman: {
