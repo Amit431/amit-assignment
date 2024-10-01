@@ -384,7 +384,15 @@ export const EditStats = async (req: Request, res: Response) => {
 export const ToggleStrike = async (req: Request, res: Response) => {
     const players = await Player.find({ isStriker: { $exists: true } }).lean();
 
+    const ballbyball = await BallByBall.findOne().sort({ _id: -1 });
+
+    let strikerId: string | null = null;
+    let nonStrikerId: string | null = null;
+
     players.map(async (player) => {
+        if (nonStrikerId === null) nonStrikerId = player.isStriker ? player._id.toString() : null;
+        if (strikerId === null) strikerId = !player.isStriker ? player._id.toString() : null;
+
         await Player.updateOne(
             { _id: player._id },
             {
@@ -392,6 +400,14 @@ export const ToggleStrike = async (req: Request, res: Response) => {
             }
         );
     });
+
+    await BallByBall.updateOne(
+        { _id: ballbyball?._id },
+        {
+            strikerBatsmanId: strikerId,
+            nonStrikerBatsmanId: nonStrikerId,
+        }
+    );
 
     res.json({});
 };
