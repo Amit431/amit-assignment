@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { handleUpdateStats, fetchScoreBoard, EditStats, ToggleStrike } from "../controllers/updateStats.controller";
+import { handleUpdateStats, fetchScoreBoard, EditStats, ToggleStrike, ResetScoreBoard } from "../controllers/updateStats.controller";
 
 const router = Router();
 
@@ -14,5 +14,7 @@ router.post("/match/:matchId/update-stats", handleUpdateStats);
 
 // GET /api/match/:matchId/soreboard
 router.get("/match/:matchId/scoreboard", fetchScoreBoard);
+
+router.delete("/match/:matchId/reset", ResetScoreBoard);
 
 export default router;

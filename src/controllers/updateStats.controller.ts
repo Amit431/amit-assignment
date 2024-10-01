@@ -9,6 +9,8 @@ import { findBallTypeScenario } from "../utils/findBallTypeScenario.util";
 import Strategy, { IStatsOutputPayload } from "../services/strategy.service";
 import addOvers, { addOversV2 } from "../utils/addOvers.util";
 import { BallType } from "../interface";
+import matchModel from "../models/match.model";
+import playerModel from "../models/player.model";
 
 export interface IStatsPayload {
     normal: number;
@@ -401,13 +403,57 @@ export const ToggleStrike = async (req: Request, res: Response) => {
         );
     });
 
-    await BallByBall.updateOne(
-        { _id: ballbyball?._id },
-        {
-            strikerBatsmanId: strikerId,
-            nonStrikerBatsmanId: nonStrikerId,
-        }
-    );
+    ballbyball?._id &&
+        (await BallByBall.updateOne(
+            { _id: ballbyball?._id },
+            {
+                strikerBatsmanId: strikerId,
+                nonStrikerBatsmanId: nonStrikerId,
+            }
+        ));
 
     res.json({});
 };
+
+export async function ResetScoreBoard(req: Request, res: Response) {
+    try {
+        const { matchId } = req.params;
+
+        await Inning.updateOne(
+            {
+                matchId,
+            },
+            {
+                $set: {
+                    runs: 0,
+                    overs: "0.0",
+                    balls: 0,
+                    wides: 0,
+                    noballs: 0,
+                    legbyes: 0,
+                    byes: 0,
+                    overthrows: 0,
+                    deliveries: 0,
+                },
+            }
+        );
+
+        await playerModel.updateMany(
+            {},
+            {
+                runs: 0,
+                ballsFaced: 0,
+                wides: 0,
+                legbyes: 0,
+                byes: 0,
+            }
+        );
+
+        await BallByBall.deleteMany({});
+
+        res.json({ msg: "ok" });
+    } catch (error) {
+        const { message } = error as Error;
+        res.status(500).json({ error: message });
+    }
+}

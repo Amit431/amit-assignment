@@ -50,7 +50,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
     // Prepare new overs
     const newOvers: string = currentInning.overs || "0.0"; // Default to '0.0' if no inning found
     const updatedOvers = addOvers(newOvers, updation.team?.overs || "0.0");
-    const isOverComplete = updatedOvers.endsWith(".0");
+    const isOverComplete = updatedOvers.endsWith(".0") && !updatedOvers.startsWith("0.");
     const legalRuns = (updation.team?.runs || 0) - (payload.wide || payload.noball ? 1 : 0);
 
     await Inning.updateOne(
@@ -59,7 +59,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
             $inc: {
                 runs: updation.team?.runs || 0,
                 balls: updation.team?.balls || 0,
-                legbyes: payload.legbye ? legalRuns: 0,
+                legbyes: payload.legbye ? legalRuns : 0,
                 wides: payload.wide ? 1 : 0,
                 noballs: payload.noball ? 1 : 0,
                 byes: payload.byes ? legalRuns : 0,
@@ -72,8 +72,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
         }
     );
 
-    let isStriker =
-        (legalRuns || 0) % 2 === 0 ? true : false;
+    let isStriker = (legalRuns || 0) % 2 === 0 ? true : false;
     isStriker = isOverComplete ? !isStriker : isStriker;
 
     // Update batsman stats
