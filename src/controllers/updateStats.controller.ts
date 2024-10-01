@@ -175,9 +175,12 @@ export const EditStats = async (req: Request, res: Response) => {
         let overProgress: 1 | -1 | 0 = 0;
         // for add 1 and for substract -1 and 0 for as it is
 
+        const newLegalRuns = (newTeamStats.runs || 0) - (payload.wide || payload.noball ? 1 : 0);
+        const previousLegalRuns = (previousBall.runs || 0) - (previousPayload.wide || previousPayload.noball ? 1 : 0);
+
         const isBatsmanStrikeSwap =
-            ((newTeamStats.runs || 0) % 2 === 0 && previousBall.runs % 2 !== 0) ||
-            ((newTeamStats.runs || 0) % 2 !== 0 && previousBall.runs % 2 === 0);
+            ((newLegalRuns || 0) % 2 === 0 && previousLegalRuns % 2 !== 0) ||
+            ((newLegalRuns || 0) % 2 !== 0 && previousLegalRuns % 2 === 0);
 
         const battingStats: {
             striker: {
@@ -247,7 +250,9 @@ export const EditStats = async (req: Request, res: Response) => {
                 strikerBatsmanId = ball.nonStrikerBatsmanId;
                 nonStrikerBatsmanId = striker;
 
-                if (prevBall.runs % 2 === 0) {
+                const prevLegalRuns = (prevBall.runs || 0) - (prevBall.payload.wide || prevBall.payload.noball ? 1 : 0);
+
+                if (prevLegalRuns % 2 === 0) {
                     battingStats.striker = {
                         runs: (battingStats.striker?.runs || 0) + ball.strikerBatsmanStats.runs,
                         ballsFaced: (battingStats.striker?.ballsFaced || 0) + ball.strikerBatsmanStats.balls,
@@ -299,8 +304,6 @@ export const EditStats = async (req: Request, res: Response) => {
             await BallByBall.findByIdAndUpdate(ballId, updatedBall);
         });
 
-        console.log({ battingStats });
-
         const isBallUp = Number(finalOvers) > Number(currentInning.overs);
         const isBallDown = Number(finalOvers) < Number(currentInning.overs);
 
@@ -312,7 +315,12 @@ export const EditStats = async (req: Request, res: Response) => {
                 {
                     $inc: {
                         runs: (newStats.batsman?.runs || 0) - (previousUpdation.batsman?.runs || 0),
-                        ballsFaced: isBallUp ? 1 : isBallDown && !(payload.noball || payload.wide) ? -1 : 0,
+                        ballsFaced:
+                            isBallUp && !(previousBall.payload.noball || previousBall.payload.wide)
+                                ? 1
+                                : isBallDown && !(payload.noball || payload.wide)
+                                ? -1
+                                : 0,
                     },
                 }
             );
