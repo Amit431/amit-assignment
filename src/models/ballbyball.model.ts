@@ -52,11 +52,7 @@ const BallByBallSchema = new Schema(
         ballType: {
             type: String,
             default: "",
-            enum: {
-                ...Object.values(BallType),
-                ...Object.values(NoBallScenarios),
-                ...Object.values(WideScenarios),
-            },
+            enum: [...Object.values(BallType), ...Object.values(NoBallScenarios), ...Object.values(WideScenarios)],
         },
         payload: {},
         commentary: { type: String, required: true },

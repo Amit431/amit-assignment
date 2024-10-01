@@ -21,13 +21,13 @@ function calculateNoBall(payload: IStatsPayload): IStatsOutputPayload {
             noballs: 1,
         },
         batsman: {
-            runs: payload.normal + (payload.legbye ? 0 : 0) + (payload.byes ? 0 : 0), // No runs for leg byes and byes for batsman
+            runs: !(payload.legbye || payload.byes) ? payload.normal : 0, // No runs for leg byes and byes for batsman
             ballsFaced: 1,
             noballs: 1,
             legbyes: payload.legbye ? payload.normal : 0,
         },
         bowler: {
-            runs: !(payload.legbye && payload.byes) ? payload.normal : 0, // No runs for leg byes and byes for bowler
+            runs: !(payload.legbye || payload.byes) ? NO_BALL_RUNS + payload.normal : NO_BALL_RUNS, // No runs for leg byes and byes for bowler
             ballsFaced: 0, // No-balls do not count as balls faced for the bowler
             noballs: 1,
         },
@@ -152,15 +152,15 @@ const Strategy = {
         const stats: IStatsOutputPayload = {
             team: {
                 runs: WIDE_RUNS + payload.overthrow + payload.normal, // Add wide runs and overthrow runs
-                overs: "0.1",
-                balls: 1,
+                overs: "0.0",
+                balls: 0,
                 wides: 1,
                 overthrows: payload.overthrow, // Count overthrow in extras
             },
             batsman: {},
             bowler: {
                 runs: WIDE_RUNS + payload.overthrow + +payload.normal, // Count the wide and overthrow runs
-                ballsFaced: 1, // Counts as a delivery faced
+                ballsFaced: 0, // Counts as a delivery faced
                 wides: 1,
                 overthrows: payload.overthrow, // Count overthrow in extras for the bowler
             },
