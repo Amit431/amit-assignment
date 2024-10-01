@@ -175,6 +175,7 @@ export const EditStats = async (req: Request, res: Response) => {
         const isBatsmanStrikeSwap =
             ((newTeamStats.runs || 0) % 2 === 0 && previousBall.runs % 2 !== 0) ||
             ((newTeamStats.runs || 0) % 2 !== 0 && previousBall.runs % 2 === 0);
+
         // console.log({ isBatsmanStrikeSwap });
         // console.log({ nR: newTeamStats.runs, pB: previousBall.runs });
 
@@ -251,14 +252,11 @@ export const EditStats = async (req: Request, res: Response) => {
                     };
                 }
             }
-            if (isBatsmanStrikeSwap && index === 0) {
-                if ((newStats.team?.runs || 0) % 2 !== 0) {
-                    const striker = ball.strikerBatsmanId;
-                    strikerBatsmanId = ball.nonStrikerBatsmanId;
-                    nonStrikerBatsmanId = striker;
-                }
-            }
-
+            // if (isBatsmanStrikeSwap && index === 0) {
+            //     const striker = ball.strikerBatsmanId;
+            //     strikerBatsmanId = ball.nonStrikerBatsmanId;
+            //     nonStrikerBatsmanId = striker;
+            // }
 
             const mapString: { [key: string]: string } = {
                 normal: "runs",
@@ -307,26 +305,12 @@ export const EditStats = async (req: Request, res: Response) => {
         if (!isBatsmanStrikeSwap || balls.length === 1) {
             await Player.updateOne(
                 {
-                    _id: previousBall.nonStrikerBatsmanId,
-                },
-                {
-                    $set: {
-                        isStriker: (newStats.team?.runs || 0) % 2 !== 0 ? true : false,
-                    },
-                }
-            );
-
-            await Player.updateOne(
-                {
                     _id: previousBall.strikerBatsmanId,
                 },
                 {
                     $inc: {
                         runs: (newStats.batsman?.runs || 0) - (previousUpdation.batsman?.runs || 0),
                         ballsFaced: isBallUp ? 1 : isBallDown ? -1 : 0,
-                    },
-                    $set: {
-                        isStriker: (newStats.team?.runs || 0) % 2 !== 0 ? false : true,
                     },
                 }
             );
@@ -395,4 +379,19 @@ export const EditStats = async (req: Request, res: Response) => {
         const { message } = error as Error;
         res.status(500).json({ message: "Error updating stats", error: message });
     }
+};
+
+export const ToggleStrike = async (req: Request, res: Response) => {
+    const players = await Player.find({ isStriker: { $exists: true } }).lean();
+
+    players.map(async (player) => {
+        await Player.updateOne(
+            { _id: player._id },
+            {
+                isStriker: !player.isStriker,
+            }
+        );
+    });
+
+    res.json({});
 };
