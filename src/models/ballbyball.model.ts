@@ -17,6 +17,7 @@ export interface IBallByBall extends Document {
         runs: number;
         balls: number;
     };
+    legalRuns: number;
     outBatsmanId: mongoose.Types.ObjectId;
     bowlerId: mongoose.Types.ObjectId;
     runs: number;
@@ -49,6 +50,7 @@ const BallByBallSchema = new Schema(
         bowlerId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
         runs: { type: Number, required: true },
         extras: { type: String, default: "" },
+        legalRuns: Number,
         ballType: {
             type: String,
             default: "",
