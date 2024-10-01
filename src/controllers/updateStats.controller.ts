@@ -109,7 +109,7 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
         });
 
         const ballbyball = await BallByBall.find({})
-            .select("commentary over")
+            .select("commentary over strikerBatsmanName bowlerName")
             .sort({ _id: -1 })
             .limit(20)
             .lean()
@@ -212,6 +212,8 @@ export const EditStats = async (req: Request, res: Response) => {
             let ballByBallUpdatedOver = null;
             let strikerBatsmanId = null;
             let nonStrikerBatsmanId = null;
+            let strikerBatsmanName = null;
+            let nonStrikerBatsmanName = null;
 
             // Update Over
             if (previousBallType !== newBallType && index === 0) {
@@ -252,6 +254,10 @@ export const EditStats = async (req: Request, res: Response) => {
                 strikerBatsmanId = ball.nonStrikerBatsmanId;
                 nonStrikerBatsmanId = striker;
 
+                const strikerName = ball.strikerBatsmanName;
+                strikerBatsmanName = ball.nonStrikerBatsmanName;
+                nonStrikerBatsmanName = strikerName;
+
                 const prevLegalRuns = (prevBall.runs || 0) - (prevBall.payload.wide || prevBall.payload.noball ? 1 : 0);
 
                 if (prevLegalRuns % 2 === 0) {
@@ -284,6 +290,8 @@ export const EditStats = async (req: Request, res: Response) => {
                 ...(ballByBallUpdatedOver ? { over: ballByBallUpdatedOver } : {}),
                 ...(strikerBatsmanId ? { strikerBatsmanId } : {}),
                 ...(nonStrikerBatsmanId ? { nonStrikerBatsmanId } : {}),
+                ...(strikerBatsmanName ? { strikerBatsmanName } : {}),
+                ...(nonStrikerBatsmanName ? { nonStrikerBatsmanName } : {}),
                 ...(index === 0
                     ? {
                           strikerBatsmanStats: {

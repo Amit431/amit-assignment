@@ -8,11 +8,13 @@ export interface IBallByBall extends Document {
     over: string;
     ball: number;
     strikerBatsmanId: mongoose.Types.ObjectId;
+    strikerBatsmanName: string;
     strikerBatsmanStats: {
         runs: number;
         balls: number;
     };
     nonStrikerBatsmanId: mongoose.Types.ObjectId;
+    nonStrikerBatsmanName: string;
     nonStrikerBatsmanStats: {
         runs: number;
         balls: number;
@@ -20,13 +22,14 @@ export interface IBallByBall extends Document {
     legalRuns: number;
     outBatsmanId: mongoose.Types.ObjectId;
     bowlerId: mongoose.Types.ObjectId;
+    bowlerName: mongoose.Types.ObjectId;
     runs: number;
     extras: string; // e.g., "NO Ball", "Wide"
     ballType: string;
     commentary: string;
     payload: IStatsPayload;
     isStrikerChanged: boolean;
-    delivery: number,
+    delivery: number;
 }
 
 const BallByBallSchema = new Schema(
@@ -38,6 +41,7 @@ const BallByBallSchema = new Schema(
         over: { type: String, required: true },
         ball: { type: Number, required: true },
         strikerBatsmanId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
+        strikerBatsmanName: String,
         strikerBatsmanStats: {
             runs: Number,
             balls: Number,
@@ -47,8 +51,10 @@ const BallByBallSchema = new Schema(
             runs: Number,
             balls: Number,
         },
+        nonStrikerBatsmanName: String,
         outBatsmanId: { type: Schema.Types.ObjectId, ref: "Player" },
         bowlerId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
+        bowlerName: String,
         runs: { type: Number, required: true },
         extras: { type: String, default: "" },
         legalRuns: Number,

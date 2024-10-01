@@ -76,7 +76,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
     isStriker = isOverComplete ? !isStriker : isStriker;
 
     // Update batsman stats
-    await Player.updateOne(
+    const striker = await Player.findOneAndUpdate(
         { _id: strikerId },
         {
             $inc: {
@@ -92,7 +92,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
         }
     );
 
-    const nonStrikerBatsStats = await Player.findOneAndUpdate(
+    const nonStrikerBats = await Player.findOneAndUpdate(
         {
             _id: nonStrikerId,
         },
@@ -104,7 +104,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
     );
 
     // Update bowler stats
-    await Player.updateOne(
+    const bowlerPlayer = await Player.findOneAndUpdate(
         { _id: bowlerId },
         {
             $inc: {
@@ -139,8 +139,11 @@ export const updateStats = async (input: IStatsReqPayload) => {
         over: updatedOversV2,
         ball: currentInning.balls + (updation.team?.balls || 0),
         strikerBatsmanId: strikerId,
+        strikerBatsmanName: striker?.name,
         nonStrikerBatsmanId: nonStrikerId,
+        nonStrikerBatsmanName: nonStrikerBats?.name,
         bowlerId: bowlerId,
+        bowlerName: bowlerPlayer?.name,
         runs: updation.team.runs,
         extras: updation.team.runs,
         ballType: ballType,
@@ -154,7 +157,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
             balls: updation.batsman?.ballsFaced || 0,
         },
         legalRuns,
-        delivery
+        delivery,
     });
 
     return { batsman, bowler, match };
