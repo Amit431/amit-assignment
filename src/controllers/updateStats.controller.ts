@@ -203,10 +203,13 @@ export const EditStats = async (req: Request, res: Response) => {
         };
 
         const completedOver = Number(previousBall.over.split(".")[0]);
+        let lastBallLegalRuns: null | number = null;
 
         balls.forEach(async (ball, index) => {
             const overBall = Number(previousBall.over.split(".")[0]);
             if (overBall !== completedOver) return;
+
+            lastBallLegalRuns = ball.legalRuns;
 
             const ballId = ball._id;
             let ballByBallUpdatedOver = null;
@@ -316,11 +319,7 @@ export const EditStats = async (req: Request, res: Response) => {
         const isBallUp = Number(finalOvers) > Number(currentInning.overs);
         const isBallDown = Number(finalOvers) < Number(currentInning.overs);
 
-        console.log("====================================");
-        console.log(battingStats);
-        console.log("====================================");
-
-        if (!isBatsmanStrikeSwap || balls.length === 1) {
+        if (!isBatsmanStrikeSwap && balls.length === 1) {
             await Player.updateOne(
                 {
                     _id: previousBall.strikerBatsmanId,
@@ -334,6 +333,37 @@ export const EditStats = async (req: Request, res: Response) => {
                                 : isBallDown && !(payload.noball || payload.wide)
                                 ? -1
                                 : 0,
+                    },
+                }
+            );
+        } else if (isBatsmanStrikeSwap && balls.length === 1) {
+            await Player.updateOne(
+                {
+                    _id: previousBall.strikerBatsmanId,
+                },
+                {
+                    $inc: {
+                        runs: (newStats.batsman?.runs || 0) - (previousUpdation.batsman?.runs || 0),
+                        ballsFaced:
+                            isBallUp && !previousBall.payload.noball
+                                ? 1
+                                : isBallDown && !(payload.noball || payload.wide)
+                                ? -1
+                                : 0,
+                    },
+                    $set: {
+                        isStriker: newLegalRuns % 2 ? false : true,
+                    },
+                }
+            );
+
+            await Player.updateOne(
+                {
+                    _id: previousBall.nonStrikerBatsmanId,
+                },
+                {
+                    $set: {
+                        isStriker: newLegalRuns % 2 ? true : false,
                     },
                 }
             );
@@ -351,7 +381,7 @@ export const EditStats = async (req: Request, res: Response) => {
                         ballsFaced: (battingStats.nonstriker?.ballsFaced || 0) - (battingStats.striker.ballsFaced || 0),
                     },
                     $set: {
-                        isStriker: true,
+                        isStriker: lastBallLegalRuns === null ? true : lastBallLegalRuns % 2 ? false : true,
                     },
                 }
             );
@@ -369,7 +399,7 @@ export const EditStats = async (req: Request, res: Response) => {
                         ballsFaced: updateBalls,
                     },
                     $set: {
-                        isStriker: false,
+                        isStriker: lastBallLegalRuns === null ? false : lastBallLegalRuns % 2 ? true : false,
                     },
                 }
             );
