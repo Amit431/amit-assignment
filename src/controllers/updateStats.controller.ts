@@ -168,7 +168,9 @@ export const EditStats = async (req: Request, res: Response) => {
             ball: {
                 $gte: previousBall.ball,
             },
-
+            delivery: {
+                $gte: previousBall.delivery,
+            },
             matchId: matchId,
         }).sort({ ball: 1 });
 
@@ -276,6 +278,7 @@ export const EditStats = async (req: Request, res: Response) => {
                           ballType: newBallType,
                           runs: payload.normal,
                           payload,
+                          legalRuns: newLegalRuns,
                       }
                     : {}),
                 ...(ballByBallUpdatedOver ? { over: ballByBallUpdatedOver } : {}),
@@ -316,7 +319,7 @@ export const EditStats = async (req: Request, res: Response) => {
                     $inc: {
                         runs: (newStats.batsman?.runs || 0) - (previousUpdation.batsman?.runs || 0),
                         ballsFaced:
-                            isBallUp && !(previousBall.payload.noball || previousBall.payload.wide)
+                            isBallUp && !previousBall.payload.noball
                                 ? 1
                                 : isBallDown && !(payload.noball || payload.wide)
                                 ? -1
@@ -383,6 +386,42 @@ export const EditStats = async (req: Request, res: Response) => {
                 },
                 $inc: {
                     balls: newTeamStats.balls || 0, // Update the balls faced
+                    wides:
+                        previousBall.payload.wide && !payload.wide
+                            ? -1
+                            : !previousBall.payload.wide && payload.wide
+                            ? 1
+                            : 0,
+                    noballs:
+                        previousBall.payload.noball && !payload.noball
+                            ? -1
+                            : !previousBall.payload.noball && payload.noball
+                            ? 1
+                            : 0,
+                    overthrows:
+                        previousBall.payload.overthrow !== -1 && payload.overthrow === -1
+                            ? -previousBall.payload.overthrow
+                            : previousBall.payload.overthrow === -1 && payload.overthrow !== -1
+                            ? payload.overthrow
+                            : previousBall.payload.overthrow !== -1 && payload.overthrow !== -1
+                            ? payload.overthrow - previousBall.payload.overthrow
+                            : 0,
+                    byes:
+                        previousBall.payload.byes && !payload.byes
+                            ? -previousBall.legalRuns
+                            : !previousBall.payload.byes && payload.byes
+                            ? newLegalRuns
+                            : previousBall.payload.byes && payload.byes
+                            ? newLegalRuns - previousBall.legalRuns
+                            : 0,
+                    legbyes:
+                        previousBall.payload.legbye && !payload.legbye
+                            ? -previousBall.legalRuns
+                            : !previousBall.payload.legbye && payload.legbye
+                            ? newLegalRuns
+                            : previousBall.payload.legbye && payload.legbye
+                            ? newLegalRuns - previousBall.legalRuns
+                            : 0,
                 },
             }
         );

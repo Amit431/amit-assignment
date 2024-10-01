@@ -26,6 +26,7 @@ export interface IBallByBall extends Document {
     commentary: string;
     payload: IStatsPayload;
     isStrikerChanged: boolean;
+    delivery: number,
 }
 
 const BallByBallSchema = new Schema(
@@ -60,6 +61,7 @@ const BallByBallSchema = new Schema(
         commentary: { type: String, required: true },
         isWicket: Boolean,
         isStrikerChanged: Boolean,
+        delivery: Number,
     },
     {
         timestamps: true,

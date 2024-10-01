@@ -154,6 +154,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
             balls: updation.batsman?.ballsFaced || 0,
         },
         legalRuns,
+        delivery
     });
 
     return { batsman, bowler, match };
