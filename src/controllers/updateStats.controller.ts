@@ -259,7 +259,6 @@ export const EditStats = async (req: Request, res: Response) => {
                 }
             }
 
-            console.log(isBatsmanStrikeSwap, strikerBatsmanId, nonStrikerBatsmanId);
 
             const mapString: { [key: string]: string } = {
                 normal: "runs",
