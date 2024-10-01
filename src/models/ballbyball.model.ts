@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { BallType, NoBallScenarios, WideScenarios } from "../interface";
 
-interface IBallByBall extends Document {
+export interface IBallByBall extends Document {
     matchId: mongoose.Types.ObjectId;
     ballId: String;
     over: number;

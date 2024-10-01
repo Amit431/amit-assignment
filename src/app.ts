@@ -1,5 +1,5 @@
 import express from "express";
-import { StatsRoutes } from "./routes";
+import { StatsRoutes, BallByBallRoutes } from "./routes";
 import config from "./config";
 import cors from "cors";
 
@@ -12,5 +12,6 @@ app.use(express.json());
 
 // Routes
 app.use("/api/v1", StatsRoutes);
+app.use("/api/v1", BallByBallRoutes);
 
 export default app;

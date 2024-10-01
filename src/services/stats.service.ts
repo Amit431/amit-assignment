@@ -119,6 +119,10 @@ export const updateStats = async (input: IStatsReqPayload) => {
 
     const ballId = `${inning}.${overComplete}.${balls}.${delivery}`;
 
+    const mapString: { [key: string]: string } = {
+        normal: "runs",
+    };
+
     await BallByBall.create({
         ballId,
         matchId,
@@ -130,7 +134,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
         runs: updation.team.runs,
         extras: updation.team.runs,
         ballType: ballType,
-        commentary: `${updation.team.runs} ${ballType} ${
+        commentary: `${updation.team.runs} ${mapString[ballType as string] || ballType} ${
             ballType === BallType.OVERTHROW ? payload.overthrow : ""
         } scored`,
     });

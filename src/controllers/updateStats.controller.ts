@@ -4,6 +4,7 @@ import { updateStats } from "../services/stats.service";
 import Inning, { IInning } from "../models/inning.model";
 import Player, { IPlayer } from "../models/player.model";
 import _ from "lodash";
+import BallByBall, { IBallByBall } from "../models/ballbyball.model";
 
 export interface IStatsPayload {
     normal: number;
@@ -39,7 +40,7 @@ export const handleUpdateStats = async (req: Request, res: Response) => {
         res.status(200).json({ message: "Stats updated successfully", data: result });
     } catch (error) {
         console.log(error);
-        
+
         const { message } = error as Error;
         res.status(500).json({ message: "Error updating stats", error: message });
     }
@@ -51,6 +52,7 @@ export interface IScoreCard {
     strikerBatsman: Partial<IPlayer>;
     nonStrikerBatsman: Partial<IPlayer>;
     bowler: Partial<IPlayer>;
+    ballbyball: Partial<IBallByBall[]>;
 }
 
 export const fetchScoreBoard = async (req: Request, res: Response) => {
@@ -70,6 +72,7 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
             strikerBatsman: {},
             nonStrikerBatsman: {},
             bowler: {},
+            ballbyball: [],
         };
 
         // Reduce over the innings array and populate the scorecard
@@ -98,6 +101,10 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
                 } || {}) as Partial<IPlayer>;
             }
         });
+
+        const ballbyball = await BallByBall.find({}).select("commentary over").limit(20).lean().exec();
+
+        scorecard.ballbyball = ballbyball.reverse();
 
         res.json(scorecard);
     } catch (error) {
