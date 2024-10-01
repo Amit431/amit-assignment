@@ -102,9 +102,9 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
             }
         });
 
-        const ballbyball = await BallByBall.find({}).select("commentary over").limit(20).lean().exec();
+        const ballbyball = await BallByBall.find({}).select("commentary over").sort({_id: -1}).limit(20).lean().exec();
 
-        scorecard.ballbyball = ballbyball.reverse();
+        scorecard.ballbyball = ballbyball;
 
         res.json(scorecard);
     } catch (error) {

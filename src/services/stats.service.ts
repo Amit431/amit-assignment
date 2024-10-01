@@ -7,7 +7,7 @@ import { IStatsPayload, IStatsReqPayload } from "../controllers/updateStats.cont
 import Strategy, { IStatsOutputPayload } from "./strategy.service";
 import { Types } from "mongoose";
 import Inning from "../models/inning.model";
-import addOvers from "../utils/addOvers.util";
+import addOvers, { addOversV2 } from "../utils/addOvers.util";
 import { BallType } from "../interface";
 import BallByBall from "../models/ballbyball.model";
 
@@ -112,7 +112,9 @@ export const updateStats = async (input: IStatsReqPayload) => {
 
     // Example values for inning, over, and delivery
     const inning = currentInning.inningsType === "first" ? 1 : 2; // or however you define innings
-    const oversArray = updatedOvers.split("."); // Splitting "3.2" into ["3", "2"]
+    const updatedOversV2 = addOversV2(newOvers, updation.team?.overs || "0.0");
+
+    const oversArray = updatedOversV2.split("."); // Splitting "3.2" into ["3", "2"]
     const overComplete = parseInt(oversArray[0], 10); // Total complete overs
     const balls = parseInt(oversArray[1], 10); // Balls in the current over
     const delivery = currentInning.deliveries + 1; // Assuming this is the next delivery (incrementing the balls)
@@ -123,10 +125,12 @@ export const updateStats = async (input: IStatsReqPayload) => {
         normal: "runs",
     };
 
+    console.log(updatedOversV2);
+
     await BallByBall.create({
         ballId,
         matchId,
-        over: updatedOvers,
+        over: updatedOversV2,
         ball: currentInning.balls + (updation.team?.balls || 0),
         strikerBatsmanId: strikerId,
         nonStrikerBatsmanId: nonStrikerId,
@@ -134,9 +138,9 @@ export const updateStats = async (input: IStatsReqPayload) => {
         runs: updation.team.runs,
         extras: updation.team.runs,
         ballType: ballType,
-        commentary: `${updation.team.runs} ${mapString[ballType as string] || ballType} ${
-            ballType === BallType.OVERTHROW ? payload.overthrow : ""
-        } scored`,
+        commentary: `${updation.team.runs} ${ballType !== BallType.NORMAL ? "runs" : ""} (${
+            mapString[ballType as string] || ballType
+        } ${ballType === BallType.OVERTHROW ? payload.overthrow : ""}) scored`,
     });
 
     return { batsman, bowler, match };

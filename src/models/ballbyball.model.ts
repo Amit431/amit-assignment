@@ -22,7 +22,7 @@ const BallByBallSchema = new Schema(
         ballId: {
             type: String,
         },
-        over: { type: Number, required: true },
+        over: { type: String, required: true },
         ball: { type: Number, required: true },
         strikerBatsmanId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
         nonStrikerBatsmanId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
