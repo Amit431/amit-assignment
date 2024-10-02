@@ -456,19 +456,31 @@ export const EditStats = async (req: Request, res: Response) => {
                             : 0,
                     byes:
                         previousBall.payload.byes && !payload.byes
-                            ? -previousBall.legalRuns
+                            ? -(
+                                  previousBall.legalRuns -
+                                  (previousBall.payload.overthrow > -1 ? previousBall.payload.overthrow : 0)
+                              )
                             : !previousBall.payload.byes && payload.byes
-                            ? newLegalRuns
+                            ? newLegalRuns - (payload.overthrow > -1 ? payload.overthrow : 0)
                             : previousBall.payload.byes && payload.byes
-                            ? newLegalRuns - previousBall.legalRuns
+                            ? newLegalRuns -
+                              (payload.overthrow > -1 ? payload.overthrow : 0) -
+                              (previousBall.legalRuns -
+                                  (previousBall.payload.overthrow > -1 ? previousBall.payload.overthrow : 0))
                             : 0,
                     legbyes:
                         previousBall.payload.legbye && !payload.legbye
-                            ? -previousBall.legalRuns
+                            ? -(
+                                  previousBall.legalRuns -
+                                  (previousBall.payload.overthrow > -1 ? previousBall.payload.overthrow : 0)
+                              )
                             : !previousBall.payload.legbye && payload.legbye
-                            ? newLegalRuns
+                            ? newLegalRuns - (payload.overthrow > -1 ? payload.overthrow : 0)
                             : previousBall.payload.legbye && payload.legbye
-                            ? newLegalRuns - previousBall.legalRuns
+                            ? newLegalRuns -
+                              (payload.overthrow > -1 ? payload.overthrow : 0) -
+                              (previousBall.legalRuns -
+                                  (previousBall.payload.overthrow > -1 ? previousBall.payload.overthrow : 0))
                             : 0,
                 },
             }

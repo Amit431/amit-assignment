@@ -64,10 +64,10 @@ export const updateStats = async (input: IStatsReqPayload) => {
             $inc: {
                 runs: updation.team?.runs || 0,
                 balls: updation.team?.balls || 0,
-                legbyes: payload.legbye ? legalRuns : 0,
+                legbyes: payload.legbye ? legalRuns - (payload.overthrow > -1 ? payload.overthrow : 0) : 0,
                 wides: payload.wide ? updation.team.wides : 0,
                 noballs: payload.noball ? 1 : 0,
-                byes: payload.byes ? legalRuns : 0,
+                byes: payload.byes ? legalRuns - (payload.overthrow > -1 ? payload.overthrow : 0) : 0,
                 overthrows: payload.overthrow !== -1 ? payload.overthrow : 0,
                 deliveries: 1,
             },

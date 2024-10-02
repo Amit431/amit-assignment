@@ -15,10 +15,11 @@ const NO_BALL_RUNS = 1;
 function calculateNoBall(payload: IStatsPayload): IStatsOutputPayload {
     const stats: IStatsOutputPayload = {
         team: {
-            runs: NO_BALL_RUNS + payload.normal,
+            runs: NO_BALL_RUNS + payload.normal + (payload.overthrow > -1 ? payload.overthrow : 0),
             overs: "0.0",
             balls: 0,
             noballs: 1,
+            overthrows: payload.overthrow > -1 ? payload.overthrow : 0,
         },
         batsman: {
             runs: !(payload.legbye || payload.byes) ? payload.normal : 0, // No runs for leg byes and byes for batsman
@@ -27,7 +28,9 @@ function calculateNoBall(payload: IStatsPayload): IStatsOutputPayload {
             legbyes: payload.legbye ? payload.normal : 0,
         },
         bowler: {
-            runs: !(payload.legbye || payload.byes) ? NO_BALL_RUNS + payload.normal : NO_BALL_RUNS, // No runs for leg byes and byes for bowler
+            runs: !(payload.legbye || payload.byes)
+                ? NO_BALL_RUNS + payload.normal + (payload.overthrow > -1 ? payload.overthrow : 0)
+                : NO_BALL_RUNS, // No runs for leg byes and byes for bowler
             ballsFaced: 0, // No-balls do not count as balls faced for the bowler
             noballs: 1,
         },
