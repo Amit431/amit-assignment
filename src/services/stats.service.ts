@@ -17,20 +17,25 @@ export const updateStats = async (input: IStatsReqPayload) => {
     // Find match and both players (batsman and bowler) concurrently
     const [match, players] = await Promise.all([
         Match.findById(matchId),
-        Player.find({ _id: { $in: [strikerId, bowlerId] } }), // Fetch both batsman and bowler
+        Player.find({ _id: { $in: [strikerId, bowlerId, nonStrikerId] } }), // Fetch both batsman and bowler
     ]);
 
     if (!match || players.length < 2) {
         throw new Error("Match or Players not found");
     }
 
-    const [batsmanArray, bowlerArray] = partition(
+    // Partition players into batsman, bowler, and non-striker
+    const [batsmanArray, othersArray] = partition(
         players,
         (player: IPlayerDoc) => (player._id as Types.ObjectId).toString() === strikerId
     );
-
     const batsman = batsmanArray[0];
+    const [bowlerArray, nonStrikerArray] = partition(
+        othersArray,
+        (player: IPlayerDoc) => (player._id as Types.ObjectId).toString() === bowlerId
+    );
     const bowler = bowlerArray[0];
+    const nonStrikerBats = nonStrikerArray[0];
 
     if (!batsman || !bowler) {
         throw new Error("Batsman or Bowler not found");
@@ -76,47 +81,53 @@ export const updateStats = async (input: IStatsReqPayload) => {
     isStriker = isOverComplete ? !isStriker : isStriker;
 
     // Update batsman stats
-    const striker = await Player.findOneAndUpdate(
-        { _id: strikerId },
+    // Efficiently update batsman, non-striker, and bowler using bulkWrite
+    const bulkOps = [
         {
-            $inc: {
-                runs: updation.batsman?.runs || 0,
-                ballsFaced: updation.batsman?.ballsFaced || 0,
-                wides: updation.batsman?.wides || 0,
-                legbyes: updation.batsman?.legbyes || 0,
-                byes: updation.batsman?.byes || 0,
+            updateOne: {
+                filter: { _id: strikerId },
+                update: {
+                    $inc: {
+                        runs: updation.batsman?.runs || 0,
+                        ballsFaced: updation.batsman?.ballsFaced || 0,
+                        wides: updation.batsman?.wides || 0,
+                        legbyes: updation.batsman?.legbyes || 0,
+                        byes: updation.batsman?.byes || 0,
+                    },
+                    $set: {
+                        isStriker: isStriker,
+                    },
+                },
             },
-            $set: {
-                isStriker: isStriker,
-            },
-        }
-    );
-
-    const nonStrikerBats = await Player.findOneAndUpdate(
-        {
-            _id: nonStrikerId,
         },
         {
-            $set: {
-                isStriker: !isStriker,
+            updateOne: {
+                filter: { _id: nonStrikerId },
+                update: {
+                    $set: {
+                        isStriker: !isStriker,
+                    },
+                },
             },
-        }
-    );
-
-    // Update bowler stats
-    const bowlerPlayer = await Player.findOneAndUpdate(
-        { _id: bowlerId },
+        },
         {
-            $inc: {
-                runs: updation.bowler?.runs || 0,
-                ballsFaced: updation.bowler?.ballsFaced || 0,
-                noballs: updation.bowler?.noballs || 0,
-                wides: updation.bowler?.wides || 0,
-                byes: updation.bowler?.byes || 0,
-                legbyes: updation.bowler?.legbyes || 0,
+            updateOne: {
+                filter: { _id: bowlerId },
+                update: {
+                    $inc: {
+                        runs: updation.bowler?.runs || 0,
+                        ballsFaced: updation.bowler?.ballsFaced || 0,
+                        noballs: updation.bowler?.noballs || 0,
+                        wides: updation.bowler?.wides || 0,
+                        byes: updation.bowler?.byes || 0,
+                        legbyes: updation.bowler?.legbyes || 0,
+                    },
+                },
             },
-        }
-    );
+        },
+    ];
+
+    await Player.bulkWrite(bulkOps);
 
     // Example values for inning, over, and delivery
     const inning = currentInning.inningsType === "first" ? 1 : 2; // or however you define innings
@@ -139,11 +150,11 @@ export const updateStats = async (input: IStatsReqPayload) => {
         over: updatedOversV2,
         ball: currentInning.balls + (updation.team?.balls || 0),
         strikerBatsmanId: strikerId,
-        strikerBatsmanName: striker?.name,
+        strikerBatsmanName: batsman?.name,
         nonStrikerBatsmanId: nonStrikerId,
         nonStrikerBatsmanName: nonStrikerBats?.name,
         bowlerId: bowlerId,
-        bowlerName: bowlerPlayer?.name,
+        bowlerName: bowler?.name,
         runs: updation.team.runs,
         extras: updation.team.runs,
         ballType: ballType,
