@@ -435,16 +435,11 @@ export const EditStats = async (req: Request, res: Response) => {
                     balls: newTeamStats.balls || 0, // Update the balls faced
                     wides:
                         previousBall.payload.wide && !payload.wide
-                            ? -(
-                                  previousBall.runs -
-                                  (previousBall.payload.overthrow > -1 ? previousBall.payload.overthrow : 0)
-                              )
+                            ? -previousBall.runs
                             : !previousBall.payload.wide && payload.wide
                             ? newStats.team?.wides || 0
                             : previousBall.payload.wide && payload.wide
-                            ? (newStats.team?.wides || 0) -
-                              (previousBall.runs -
-                                  (previousBall.payload.overthrow > -1 ? previousBall.payload.overthrow : 0))
+                            ? (newStats.team?.wides || 0) - previousBall.runs
                             : 0,
                     noballs:
                         previousBall.payload.noball && !payload.noball
@@ -452,41 +447,29 @@ export const EditStats = async (req: Request, res: Response) => {
                             : !previousBall.payload.noball && payload.noball
                             ? 1
                             : 0,
-                    overthrows:
-                        previousBall.payload.overthrow !== -1 && payload.overthrow === -1
-                            ? -previousBall.payload.overthrow
-                            : previousBall.payload.overthrow === -1 && payload.overthrow !== -1
-                            ? payload.overthrow
-                            : previousBall.payload.overthrow !== -1 && payload.overthrow !== -1
-                            ? payload.overthrow - previousBall.payload.overthrow
-                            : 0,
+                    // overthrows:
+                    //     previousBall.payload.overthrow !== -1 && payload.overthrow === -1
+                    //         ? -previousBall.payload.overthrow
+                    //         : previousBall.payload.overthrow === -1 && payload.overthrow !== -1
+                    //         ? payload.overthrow
+                    //         : previousBall.payload.overthrow !== -1 && payload.overthrow !== -1
+                    //         ? payload.overthrow - previousBall.payload.overthrow
+                    //         : 0,
                     byes:
                         previousBall.payload.byes && !payload.byes
-                            ? -(
-                                  previousBall.legalRuns -
-                                  (previousBall.payload.overthrow > -1 ? previousBall.payload.overthrow : 0)
-                              )
+                            ? -previousBall.legalRuns
                             : !previousBall.payload.byes && payload.byes
-                            ? newLegalRuns - (payload.overthrow > -1 ? payload.overthrow : 0)
+                            ? newLegalRuns
                             : previousBall.payload.byes && payload.byes
-                            ? newLegalRuns -
-                              (payload.overthrow > -1 ? payload.overthrow : 0) -
-                              (previousBall.legalRuns -
-                                  (previousBall.payload.overthrow > -1 ? previousBall.payload.overthrow : 0))
+                            ? newLegalRuns - previousBall.legalRuns
                             : 0,
                     legbyes:
                         previousBall.payload.legbye && !payload.legbye
-                            ? -(
-                                  previousBall.legalRuns -
-                                  (previousBall.payload.overthrow > -1 ? previousBall.payload.overthrow : 0)
-                              )
+                            ? -previousBall.legalRuns
                             : !previousBall.payload.legbye && payload.legbye
-                            ? newLegalRuns - (payload.overthrow > -1 ? payload.overthrow : 0)
+                            ? newLegalRuns
                             : previousBall.payload.legbye && payload.legbye
-                            ? newLegalRuns -
-                              (payload.overthrow > -1 ? payload.overthrow : 0) -
-                              (previousBall.legalRuns -
-                                  (previousBall.payload.overthrow > -1 ? previousBall.payload.overthrow : 0))
+                            ? newLegalRuns - previousBall.legalRuns
                             : 0,
                 },
             }

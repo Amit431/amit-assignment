@@ -108,10 +108,10 @@ const Strategy = {
     [BallType.LEG_BYE]: function (payload: IStatsPayload): IStatsOutputPayload {
         const stats: IStatsOutputPayload = {
             team: {
-                runs: payload.normal, // Add normal runs
+                runs: payload.normal + (payload.overthrow !== -1 ? payload.overthrow : 0), // Add normal runs
                 overs: "0.1",
                 balls: 1,
-                legbyes: 1, // Count leg byes in extras
+                legbyes: 1 + (payload.overthrow !== -1 ? payload.overthrow : 0), // Count leg byes in extras
             },
             batsman: {
                 runs: 0, // Batsman does not score on leg byes
@@ -121,7 +121,7 @@ const Strategy = {
             bowler: {
                 runs: 0, // No runs added to bowler for leg bye
                 ballsFaced: 1, // Counts as a delivery faced
-                legbyes: 1, // Count leg byes in extras for the bowler
+                legbyes: 1 + (payload.overthrow !== -1 ? payload.overthrow : 0), // Count leg byes in extras for the bowler
             },
         };
 
@@ -131,10 +131,10 @@ const Strategy = {
     [BallType.BYE]: function (payload: IStatsPayload): IStatsOutputPayload {
         const stats: IStatsOutputPayload = {
             team: {
-                runs: payload.normal, // Add normal runs
+                runs: payload.normal + (payload.overthrow !== -1 ? payload.overthrow : 0), // Add normal runs
                 overs: "0.1",
                 balls: 1,
-                byes: payload.normal, // Count byes in extras
+                byes: payload.normal + (payload.overthrow !== -1 ? payload.overthrow : 0), // Count byes in extras
             },
             batsman: {
                 runs: 0, // Batsman does not score on byes
@@ -144,7 +144,7 @@ const Strategy = {
             bowler: {
                 runs: 0, // No runs added to bowler for bye
                 ballsFaced: 1, // Counts as a delivery faced
-                byes: payload.normal, // Count byes in extras for the bowler
+                byes: payload.normal + (payload.overthrow !== -1 ? payload.overthrow : 0), // Count byes in extras for the bowler
             },
         };
 
@@ -157,14 +157,14 @@ const Strategy = {
                 runs: WIDE_RUNS + (payload.overthrow > -1 ? payload.overthrow : 0) + payload.normal, // Add wide runs and overthrow runs
                 overs: "0.0",
                 balls: 0,
-                wides: WIDE_RUNS + payload.normal,
+                wides: WIDE_RUNS + (payload.overthrow > -1 ? payload.overthrow : 0) + payload.normal,
                 overthrows: payload.overthrow > -1 ? payload.overthrow : 0, // Count overthrow in extras
             },
             batsman: {},
             bowler: {
                 runs: WIDE_RUNS + (payload.overthrow > -1 ? payload.overthrow : 0) + +payload.normal, // Count the wide and overthrow runs
                 ballsFaced: 0, // Counts as a delivery faced
-                wides: WIDE_RUNS + payload.normal,
+                wides: WIDE_RUNS + (payload.overthrow > -1 ? payload.overthrow : 0) + payload.normal,
                 overthrows: payload.overthrow > -1 ? payload.overthrow : 0, // Count overthrow in extras for the bowler
             },
         };
