@@ -317,7 +317,7 @@ export const EditStats = async (req: Request, res: Response) => {
                     ? {
                           commentary: `${newStats.team.runs} ${newBallType !== BallType.NORMAL ? "runs" : ""} (${
                               mapString[newBallType as string] || newBallType
-                          } ${newBallType === BallType.OVERTHROW ? payload.overthrow : ""}) scored`,
+                          }, ${payload.overthrow > -1 ? `OT: ${payload.overthrow}` : ""}) scored`,
                       }
                     : {}),
             };
@@ -447,14 +447,14 @@ export const EditStats = async (req: Request, res: Response) => {
                             : !previousBall.payload.noball && payload.noball
                             ? 1
                             : 0,
-                    // overthrows:
-                    //     previousBall.payload.overthrow !== -1 && payload.overthrow === -1
-                    //         ? -previousBall.payload.overthrow
-                    //         : previousBall.payload.overthrow === -1 && payload.overthrow !== -1
-                    //         ? payload.overthrow
-                    //         : previousBall.payload.overthrow !== -1 && payload.overthrow !== -1
-                    //         ? payload.overthrow - previousBall.payload.overthrow
-                    //         : 0,
+                    overthrows:
+                        previousBall.payload.overthrow !== -1 && payload.overthrow === -1
+                            ? -previousBall.payload.overthrow
+                            : previousBall.payload.overthrow === -1 && payload.overthrow !== -1
+                            ? payload.overthrow
+                            : previousBall.payload.overthrow !== -1 && payload.overthrow !== -1
+                            ? payload.overthrow - previousBall.payload.overthrow
+                            : 0,
                     byes:
                         previousBall.payload.byes && !payload.byes
                             ? -previousBall.legalRuns

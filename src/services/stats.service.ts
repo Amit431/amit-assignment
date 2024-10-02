@@ -160,7 +160,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
         ballType: ballType,
         commentary: `${updation.team.runs} ${ballType !== BallType.NORMAL ? "runs" : ""} (${
             mapString[ballType as string] || ballType
-        } ${ballType === BallType.OVERTHROW ? payload.overthrow : ""}) scored`,
+        }, ${payload.overthrow > -1 ? `OT: ${payload.overthrow}` : ""}) scored`,
         payload,
         isStrikerChanged: !isStriker,
         strikerBatsmanStats: {
