@@ -6,11 +6,10 @@ export const findBallTypeScenario = (statsPayload: IStatsPayload): string => {
 
     // Check for Wide scenario
     if (wide) {
-        if(normal > 0)
-            return WideScenarios.RUNS;
         if (overthrow > 0) {
             return WideScenarios.OVERTHROW; // Wide leading to an overthrow
         }
+        if (normal > 0) return WideScenarios.RUNS;
         return WideScenarios.NORMAL; // Just Wide
     }
 
