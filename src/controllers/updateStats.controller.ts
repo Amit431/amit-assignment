@@ -99,12 +99,12 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
             if (inning.bowlers?.length > 0) {
                 const bowler = (inning.bowlers?.find((player) => (player as IPlayer).isBowler) as IPlayer) || {};
 
-                scorecard.bowler = ({
+                scorecard.bowler = {
                     ...bowler,
                     overs: `${bowler.ballsFaced < 6 ? 0 : Math.trunc((bowler.ballsFaced || 0) / 6)}.${
                         (bowler.ballsFaced || 0) % 6
                     }`,
-                } || {}) as Partial<IPlayer>;
+                } as Partial<IPlayer>;
             }
         });
 
