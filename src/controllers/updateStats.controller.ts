@@ -411,9 +411,13 @@ export const EditStats = async (req: Request, res: Response) => {
                 $inc: {
                     runs: (newStats.bowler?.runs || 0) - (previousUpdation.bowler?.runs || 0),
                     ballsFaced:
-                        isBallUp && !previousBall.payload.noball
+                        isBallUp &&
+                        ((previousBall.payload.noball && !payload.noball) ||
+                            (previousBall.payload.wide && !payload.wide))
                             ? 1
-                            : isBallDown && !(payload.noball || payload.wide)
+                            : isBallDown &&
+                              ((!previousBall.payload.noball && payload.noball) ||
+                                  (!previousBall.payload.wide && payload.wide))
                             ? -1
                             : 0,
                 },
