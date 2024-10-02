@@ -184,6 +184,17 @@ export const EditStats = async (req: Request, res: Response) => {
             ((newLegalRuns || 0) % 2 === 0 && previousLegalRuns % 2 !== 0) ||
             ((newLegalRuns || 0) % 2 !== 0 && previousLegalRuns % 2 === 0);
 
+        const wideBallDown = previousBall.payload.wide && !payload.wide;
+        const wideBallUp = !previousBall.payload.wide && payload.wide;
+        const isWideBallToggle = wideBallDown || wideBallUp;
+
+        const isNoBallBallToggle =
+            (previousBall.payload.noball && !payload.noball) || (!previousBall.payload.noball && payload.noball);
+        const wideToNoBallToggle = previousBall.payload.wide && payload.noball;
+        const noBallToWideToggle = previousBall.payload.noball && payload.wide;
+
+        const isExtrasToggle = isNoBallBallToggle || isWideBallToggle;
+
         const battingStats: {
             striker: {
                 runs?: number;
@@ -318,6 +329,8 @@ export const EditStats = async (req: Request, res: Response) => {
         const isBallUp = Number(finalOvers) > Number(currentInning.overs);
         const isBallDown = Number(finalOvers) < Number(currentInning.overs);
 
+        const ballsDiff = wideBallUp ? -1 : wideBallDown ? 1 : 0;
+
         if (!isBatsmanStrikeSwap && balls.length === 1) {
             await Player.updateOne(
                 {
@@ -326,12 +339,7 @@ export const EditStats = async (req: Request, res: Response) => {
                 {
                     $inc: {
                         runs: (newStats.batsman?.runs || 0) - (previousUpdation.batsman?.runs || 0),
-                        ballsFaced:
-                            isBallUp && !previousBall.payload.noball
-                                ? 1
-                                : isBallDown && !(payload.noball || payload.wide)
-                                ? -1
-                                : 0,
+                        ballsFaced: ballsDiff,
                     },
                 }
             );
@@ -343,12 +351,7 @@ export const EditStats = async (req: Request, res: Response) => {
                 {
                     $inc: {
                         runs: (newStats.batsman?.runs || 0) - (previousUpdation.batsman?.runs || 0),
-                        ballsFaced:
-                            isBallUp && !previousBall.payload.noball
-                                ? 1
-                                : isBallDown && !(payload.noball || payload.wide)
-                                ? -1
-                                : 0,
+                        ballsFaced: ballsDiff,
                     },
                     $set: {
                         isStriker: newLegalRuns % 2 ? false : true,
@@ -377,7 +380,10 @@ export const EditStats = async (req: Request, res: Response) => {
                             (battingStats.nonstriker.runs || 0) -
                             (battingStats.striker.runs || 0) +
                             ((newStats.batsman?.runs || 0) - (previousUpdation.batsman?.runs || 0)),
-                        ballsFaced: (battingStats.nonstriker?.ballsFaced || 0) - (battingStats.striker.ballsFaced || 0),
+                        ballsFaced:
+                            (battingStats.nonstriker?.ballsFaced || 0) -
+                            (battingStats.striker.ballsFaced || 0) +
+                            ballsDiff,
                     },
                     $set: {
                         isStriker: lastBallLegalRuns === null ? true : lastBallLegalRuns % 2 ? false : true,
@@ -403,6 +409,7 @@ export const EditStats = async (req: Request, res: Response) => {
                 }
             );
         }
+
         await Player.updateOne(
             {
                 _id: previousBall.bowlerId,
@@ -410,16 +417,7 @@ export const EditStats = async (req: Request, res: Response) => {
             {
                 $inc: {
                     runs: (newStats.bowler?.runs || 0) - (previousUpdation.bowler?.runs || 0),
-                    ballsFaced:
-                        isBallUp &&
-                        ((previousBall.payload.noball && !payload.noball) ||
-                            (previousBall.payload.wide && !payload.wide))
-                            ? 1
-                            : isBallDown &&
-                              ((!previousBall.payload.noball && payload.noball) ||
-                                  (!previousBall.payload.wide && payload.wide))
-                            ? -1
-                            : 0,
+                    ballsFaced: isBallUp && isExtrasToggle ? 1 : isBallDown && isExtrasToggle ? -1 : 0,
                 },
             }
         );
