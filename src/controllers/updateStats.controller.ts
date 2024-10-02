@@ -207,7 +207,6 @@ export const EditStats = async (req: Request, res: Response) => {
 
         balls.forEach(async (ball, index) => {
             const overBall = Number(previousBall.over.split(".")[0]);
-            if (overBall !== completedOver) return;
 
             lastBallLegalRuns = ball.legalRuns;
 
@@ -411,7 +410,12 @@ export const EditStats = async (req: Request, res: Response) => {
             {
                 $inc: {
                     runs: (newStats.bowler?.runs || 0) - (previousUpdation.bowler?.runs || 0),
-                    ballsFaced: isBallUp ? 1 : isBallDown ? -1 : 0,
+                    ballsFaced:
+                        isBallUp && !previousBall.payload.noball
+                            ? 1
+                            : isBallDown && !(payload.noball || payload.wide)
+                            ? -1
+                            : 0,
                 },
             }
         );
