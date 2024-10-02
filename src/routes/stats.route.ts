@@ -1,7 +1,17 @@
-import { Router } from "express";
-import { handleUpdateStats, fetchScoreBoard, EditStats, ToggleStrike, ResetScoreBoard } from "../controllers/updateStats.controller";
+import { Request, Response, Router } from "express";
+import {
+    handleUpdateStats,
+    fetchScoreBoard,
+    EditStats,
+    ToggleStrike,
+    ResetScoreBoard,
+} from "../controllers/updateStats.controller";
 
 const router = Router();
+
+router.get("/", (req: Request, res: Response) => {
+    res.json({ message: "ok" });
+});
 
 // POST
 router.post("/match/edit/:matchId/:ballId", EditStats);
