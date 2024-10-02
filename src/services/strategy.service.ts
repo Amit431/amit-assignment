@@ -157,14 +157,14 @@ const Strategy = {
                 runs: WIDE_RUNS + (payload.overthrow > -1 ? payload.overthrow : 0) + payload.normal, // Add wide runs and overthrow runs
                 overs: "0.0",
                 balls: 0,
-                wides: WIDE_RUNS + (payload.overthrow > -1 ? payload.overthrow : 0) + payload.normal,
+                wides: WIDE_RUNS + payload.normal,
                 overthrows: payload.overthrow > -1 ? payload.overthrow : 0, // Count overthrow in extras
             },
             batsman: {},
             bowler: {
                 runs: WIDE_RUNS + (payload.overthrow > -1 ? payload.overthrow : 0) + +payload.normal, // Count the wide and overthrow runs
                 ballsFaced: 0, // Counts as a delivery faced
-                wides: WIDE_RUNS + (payload.overthrow > -1 ? payload.overthrow : 0) + payload.normal,
+                wides: WIDE_RUNS + payload.normal,
                 overthrows: payload.overthrow > -1 ? payload.overthrow : 0, // Count overthrow in extras for the bowler
             },
         };

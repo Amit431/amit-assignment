@@ -15,16 +15,16 @@ export interface IBallByBall extends Document {
     };
     nonStrikerBatsmanId: mongoose.Types.ObjectId;
     nonStrikerBatsmanName: string;
-    nonStrikerBatsmanStats: {
-        runs: number;
-        balls: number;
-    };
+    // nonStrikerBatsmanStats: {
+    //     runs: number;
+    //     balls: number;
+    // };
     legalRuns: number;
     outBatsmanId: mongoose.Types.ObjectId;
     bowlerId: mongoose.Types.ObjectId;
     bowlerName: mongoose.Types.ObjectId;
     runs: number;
-    extras: string; // e.g., "NO Ball", "Wide"
+    // extras: string; // e.g., "NO Ball", "Wide"
     ballType: string;
     commentary: string;
     payload: IStatsPayload;
