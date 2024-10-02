@@ -65,7 +65,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
                 runs: updation.team?.runs || 0,
                 balls: updation.team?.balls || 0,
                 legbyes: payload.legbye ? legalRuns : 0,
-                wides: payload.wide ? 1 : 0,
+                wides: payload.wide ? updation.team.wides : 0,
                 noballs: payload.noball ? 1 : 0,
                 byes: payload.byes ? legalRuns : 0,
                 overthrows: payload.overthrow !== -1 ? payload.overthrow : 0,

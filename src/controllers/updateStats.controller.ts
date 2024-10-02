@@ -434,9 +434,11 @@ export const EditStats = async (req: Request, res: Response) => {
                     balls: newTeamStats.balls || 0, // Update the balls faced
                     wides:
                         previousBall.payload.wide && !payload.wide
-                            ? -1
+                            ? -previousBall.runs
                             : !previousBall.payload.wide && payload.wide
-                            ? 1
+                            ? newStats.team?.wides || 0
+                            : previousBall.payload.wide && payload.wide
+                            ? (newStats.team?.wides || 0) - previousBall.runs
                             : 0,
                     noballs:
                         previousBall.payload.noball && !payload.noball

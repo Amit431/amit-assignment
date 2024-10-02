@@ -7,6 +7,7 @@ export enum NoBallScenarios {
 // Enum for different types of Wides
 export enum WideScenarios {
     NORMAL = "wide", // Regular wide delivery
+    RUNS = "wide + runs", // Regular wide delivery
     OVERTHROW = "wide + overthrow", // Wide delivery leading to an overthrow
 }
 
