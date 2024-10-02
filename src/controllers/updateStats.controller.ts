@@ -293,9 +293,10 @@ export const EditStats = async (req: Request, res: Response) => {
                 ...(index === 0
                     ? {
                           ballType: newBallType,
-                          runs: payload.normal,
+                          runs: newStats.team.runs,
                           payload,
                           legalRuns: newLegalRuns,
+                          overthrows: payload.overthrow !== -1 ? payload.overthrow : 0,
                       }
                     : {}),
                 ...(ballByBallUpdatedOver ? { over: ballByBallUpdatedOver } : {}),
@@ -434,11 +435,16 @@ export const EditStats = async (req: Request, res: Response) => {
                     balls: newTeamStats.balls || 0, // Update the balls faced
                     wides:
                         previousBall.payload.wide && !payload.wide
-                            ? -previousBall.runs
+                            ? -(
+                                  previousBall.runs -
+                                  (previousBall.payload.overthrow > -1 ? previousBall.payload.overthrow : 0)
+                              )
                             : !previousBall.payload.wide && payload.wide
                             ? newStats.team?.wides || 0
                             : previousBall.payload.wide && payload.wide
-                            ? (newStats.team?.wides || 0) - previousBall.runs
+                            ? (newStats.team?.wides || 0) -
+                              (previousBall.runs -
+                                  (previousBall.payload.overthrow > -1 ? previousBall.payload.overthrow : 0))
                             : 0,
                     noballs:
                         previousBall.payload.noball && !payload.noball
