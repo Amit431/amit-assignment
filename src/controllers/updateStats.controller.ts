@@ -360,6 +360,8 @@ export const EditStats = async (req: Request, res: Response) => {
 
         const ballsDiff = wideBallUp ? -1 : wideBallDown ? 1 : 0;
 
+        const ballHasWicket = !previousBall.isWicket && payload.wicket;
+
         if (previousBall.isWicket && !payload.wicket) {
             const nextBats = currentInning.toObject().playingXI[(currentInning?.wickets || 0) + 1];
 
@@ -372,6 +374,23 @@ export const EditStats = async (req: Request, res: Response) => {
                         $set: {
                             isStriker: false,
                             isBatting: false,
+                            runs: 0,
+                            ballsFaced: 0,
+                        },
+                    }
+                ));
+        } else if (ballHasWicket) {
+            const nextBats = currentInning.toObject().playingXI[(currentInning?.wickets || 0) + 1];
+
+            nextBats &&
+                (await Player.updateOne(
+                    {
+                        _id: nextBats,
+                    },
+                    {
+                        $set: {
+                            isStriker: true,
+                            isBatting: true,
                             runs: 0,
                             ballsFaced: 0,
                         },
@@ -390,7 +409,11 @@ export const EditStats = async (req: Request, res: Response) => {
                         ballsFaced: ballsDiff,
                     },
                     $set: {
-                        ...(previousBall.isWicket && !payload.wicket ? { isStriker: true, isBatting: true } : {}),
+                        ...(previousBall.isWicket && !payload.wicket
+                            ? { isStriker: true, isBatting: true }
+                            : ballHasWicket
+                            ? { isStriker: false, isBatting: false }
+                            : {}),
                     },
                 }
             );
@@ -405,8 +428,12 @@ export const EditStats = async (req: Request, res: Response) => {
                         ballsFaced: ballsDiff,
                     },
                     $set: {
-                        isStriker: newLegalRuns % 2 ? false : true,
-                        isBatting: true
+                        ...(ballHasWicket
+                            ? { isStriker: false, isBatting: false }
+                            : {
+                                  isStriker: newLegalRuns % 2 ? false : true,
+                                  isBatting: true,
+                              }),
                     },
                 }
             );
