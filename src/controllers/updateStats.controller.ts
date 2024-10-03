@@ -360,6 +360,25 @@ export const EditStats = async (req: Request, res: Response) => {
 
         const ballsDiff = wideBallUp ? -1 : wideBallDown ? 1 : 0;
 
+        if (previousBall.isWicket && !payload.wicket) {
+            const nextBats = currentInning.toObject().playingXI[(currentInning?.wickets || 0) + 1];
+
+            nextBats &&
+                (await Player.updateOne(
+                    {
+                        _id: nextBats,
+                    },
+                    {
+                        $set: {
+                            isStriker: false,
+                            isBatting: false,
+                            runs: 0,
+                            ballsFaced: 0,
+                        },
+                    }
+                ));
+        }
+
         if (!isBatsmanStrikeSwap && balls.length === 1) {
             await Player.updateOne(
                 {
@@ -369,6 +388,9 @@ export const EditStats = async (req: Request, res: Response) => {
                     $inc: {
                         runs: (newStats.batsman?.runs || 0) - (previousUpdation.batsman?.runs || 0),
                         ballsFaced: ballsDiff,
+                    },
+                    $set: {
+                        ...(previousBall.isWicket && !payload.wicket ? { isStriker: true, isBatting: true } : {}),
                     },
                 }
             );
@@ -384,6 +406,7 @@ export const EditStats = async (req: Request, res: Response) => {
                     },
                     $set: {
                         isStriker: newLegalRuns % 2 ? false : true,
+                        isBatting: true
                     },
                 }
             );
@@ -399,24 +422,6 @@ export const EditStats = async (req: Request, res: Response) => {
                 }
             );
         } else {
-            if (previousBall.isWicket && !payload.wicket) {
-                const nextBats = currentInning.toObject().playingXI[(currentInning?.wickets || 0) + 1];
-
-                await Player.updateOne(
-                    {
-                        _id: nextBats,
-                    },
-                    {
-                        $set: {
-                            isStriker: false,
-                            isBatting: false,
-                            runs: 0,
-                            ballsFaced: 0,
-                        },
-                    }
-                );
-            }
-
             await Player.updateOne(
                 {
                     _id: previousBall.strikerBatsmanId,
