@@ -363,7 +363,7 @@ export const EditStats = async (req: Request, res: Response) => {
         const ballHasWicket = !previousBall.isWicket && payload.wicket;
 
         if (previousBall.isWicket && !payload.wicket) {
-            const nextBats = currentInning.toObject().playingXI[(currentInning?.wickets || 0) + 1];
+            const nextBats = previousBall.nextBatsmanId;
 
             nextBats &&
                 (await Player.updateOne(
@@ -380,7 +380,12 @@ export const EditStats = async (req: Request, res: Response) => {
                     }
                 ));
         } else if (ballHasWicket) {
-            const nextBats = currentInning.toObject().playingXI[(currentInning?.wickets || 0) + 1];
+            const nextBats =
+                currentInning.toObject().playingXI[
+                    ((currentInning?.wickets || 0) + 2) % currentInning.toObject().playingXI.length
+                ];
+
+            console.log(nextBats);
 
             nextBats &&
                 (await Player.updateOne(
@@ -391,8 +396,6 @@ export const EditStats = async (req: Request, res: Response) => {
                         $set: {
                             isStriker: true,
                             isBatting: true,
-                            runs: 0,
-                            ballsFaced: 0,
                         },
                     }
                 ));

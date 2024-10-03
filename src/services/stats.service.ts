@@ -84,7 +84,10 @@ export const updateStats = async (input: IStatsReqPayload) => {
     // Update batsman stats
     let nextBats = null;
     if ((updation.team.wickets || 0) > 0) {
-        nextBats = currentInning.toObject().playingXI[(currentInning?.wickets || 0) + 2];
+        nextBats =
+            currentInning.toObject().playingXI[
+                ((currentInning?.wickets || 0) + 2) % currentInning.toObject().playingXI.length
+            ];
 
         await Player.findOneAndUpdate(
             { _id: nextBats },
