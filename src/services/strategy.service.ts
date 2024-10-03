@@ -40,6 +40,27 @@ function calculateNoBall(payload: IStatsPayload): IStatsOutputPayload {
 }
 
 const Strategy = {
+    [BallType.WICKET]: function (payload: IStatsPayload): IStatsOutputPayload {
+        const stats: IStatsOutputPayload = {
+            team: {
+                runs: payload.normal,
+                overs: "0.1",
+                balls: 1,
+                wickets: 1,
+            },
+            batsman: {
+                runs: payload.normal,
+                ballsFaced: 1,
+            },
+            bowler: {
+                runs: payload.normal,
+                ballsFaced: 1,
+                wickets: 1,
+            },
+        };
+
+        return stats;
+    },
     [BallType.NORMAL]: function (payload: IStatsPayload): IStatsOutputPayload {
         const stats: IStatsOutputPayload = {
             team: {

@@ -19,6 +19,7 @@ export interface IStatsPayload {
     byes: boolean;
     overthrow: number; // How many runs comes on overthrow if no runs than -1
     wide: boolean;
+    wicket: boolean;
 }
 
 export interface IStatsReqPayload {
@@ -57,6 +58,7 @@ export interface IScoreCard {
     teamB: object;
     strikerBatsman: Partial<IPlayer>;
     nonStrikerBatsman: Partial<IPlayer>;
+    remainingBatsman: Partial<IPlayer>[];
     bowler: Partial<IPlayer>;
     ballbyball: Partial<IBallByBall[]>;
 }
@@ -77,6 +79,7 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
             teamB: {},
             strikerBatsman: {},
             nonStrikerBatsman: {},
+            remainingBatsman: [],
             bowler: {},
             ballbyball: [],
         };
@@ -90,10 +93,14 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
             }
 
             if (inning.playingXI?.length > 0) {
-                scorecard.strikerBatsman = (inning.playingXI.find((player) => (player as IPlayer).isStriker) ||
-                    {}) as Partial<IPlayer>;
-                scorecard.nonStrikerBatsman = (inning.playingXI.find((player) => !(player as IPlayer).isStriker) ||
-                    {}) as Partial<IPlayer>;
+                scorecard.strikerBatsman = (inning.playingXI.find(
+                    (player) => (player as IPlayer).isBatting && (player as IPlayer).isStriker
+                ) || {}) as Partial<IPlayer>;
+                scorecard.nonStrikerBatsman = (inning.playingXI.find(
+                    (player) => (player as IPlayer).isBatting && !(player as IPlayer).isStriker
+                ) || {}) as Partial<IPlayer>;
+                scorecard.remainingBatsman = (inning.playingXI.filter((player) => !(player as IPlayer).isBatting) ||
+                    []) as Partial<IPlayer>[];
             }
 
             if (inning.bowlers?.length > 0) {
@@ -217,8 +224,6 @@ export const EditStats = async (req: Request, res: Response) => {
         let lastBallLegalRuns: null | number = null;
 
         balls.forEach(async (ball, index) => {
-            const overBall = Number(previousBall.over.split(".")[0]);
-
             lastBallLegalRuns = ball.legalRuns;
 
             const ballId = ball._id;
@@ -263,6 +268,13 @@ export const EditStats = async (req: Request, res: Response) => {
 
             // Update Striker
             if (isBatsmanStrikeSwap && index !== 0 && prevBall) {
+                let isNewBatsStriker = null;
+
+                if (previousBall.isWicket) {
+                    isNewBatsStriker = previousBall.nextBatsmanId.toString() === ball.strikerBatsmanId.toString();
+                    isNewBatsStriker = !(previousBall.nextBatsmanId.toString() === ball.nonStrikerBatsmanId.toString());
+                }
+
                 const striker = ball.strikerBatsmanId;
                 strikerBatsmanId = ball.nonStrikerBatsmanId;
                 nonStrikerBatsmanId = striker;
@@ -271,7 +283,11 @@ export const EditStats = async (req: Request, res: Response) => {
                 strikerBatsmanName = ball.nonStrikerBatsmanName;
                 nonStrikerBatsmanName = strikerName;
 
-                if (previousBall.strikerBatsmanId.toString() === strikerBatsmanId.toString()) {
+                if (
+                    previousBall.isWicket
+                        ? previousBall.nextBatsmanId.toString() === strikerBatsmanId.toString()
+                        : previousBall.strikerBatsmanId.toString() === strikerBatsmanId.toString()
+                ) {
                     battingStats.nonstriker = {
                         runs: (battingStats.nonstriker?.runs || 0) + ball.strikerBatsmanStats.runs,
                         ballsFaced: (battingStats.nonstriker?.ballsFaced || 0) + ball.strikerBatsmanStats.balls,
@@ -281,6 +297,16 @@ export const EditStats = async (req: Request, res: Response) => {
                         runs: (battingStats.striker?.runs || 0) + ball.strikerBatsmanStats.runs,
                         ballsFaced: (battingStats.striker?.ballsFaced || 0) + ball.strikerBatsmanStats.balls,
                     };
+                }
+
+                if (isNewBatsStriker !== null) {
+                    if (isNewBatsStriker) nonStrikerBatsmanId = previousBall.strikerBatsmanId;
+                    else strikerBatsmanId = previousBall.strikerBatsmanId;
+                }
+
+                if (isNewBatsStriker !== null) {
+                    if (isNewBatsStriker) nonStrikerBatsmanName = previousBall.strikerBatsmanName;
+                    else strikerBatsmanName = previousBall.strikerBatsmanName;
                 }
             }
 
@@ -317,7 +343,9 @@ export const EditStats = async (req: Request, res: Response) => {
                     ? {
                           commentary: `${newStats.team.runs} ${newBallType !== BallType.NORMAL ? "runs" : ""} (${
                               mapString[newBallType as string] || newBallType
-                          }, ${payload.overthrow > -1 ? `OT: ${payload.overthrow}` : ""}) scored`,
+                          }${payload.overthrow > -1 ? `, OT: ${payload.overthrow}` : ""}) scored`,
+                          isWicket: payload.wicket ? true : newStats.team.wickets,
+                          outBatsmanId: !payload.wicket ? null : previousBall.strikerBatsmanId,
                       }
                     : {}),
             };
@@ -331,6 +359,8 @@ export const EditStats = async (req: Request, res: Response) => {
         const isBallDown = Number(finalOvers) < Number(currentInning.overs);
 
         const ballsDiff = wideBallUp ? -1 : wideBallDown ? 1 : 0;
+
+        console.log({ battingStats });
 
         if (!isBatsmanStrikeSwap && balls.length === 1) {
             await Player.updateOne(
@@ -371,6 +401,25 @@ export const EditStats = async (req: Request, res: Response) => {
                 }
             );
         } else {
+            if (previousBall.isWicket && !payload.wicket) {
+                const nextBats = currentInning.toObject().playingXI[(currentInning?.wickets || 0) + 1];
+                console.log(nextBats);
+
+                await Player.updateOne(
+                    {
+                        _id: nextBats,
+                    },
+                    {
+                        $set: {
+                            isStriker: false,
+                            isBatting: false,
+                            runs: 0,
+                            ballsFaced: 0,
+                        },
+                    }
+                );
+            }
+
             await Player.updateOne(
                 {
                     _id: previousBall.strikerBatsmanId,
@@ -379,15 +428,23 @@ export const EditStats = async (req: Request, res: Response) => {
                     $inc: {
                         runs:
                             (battingStats.nonstriker.runs || 0) -
-                            (battingStats.striker.runs || 0) +
+                            (previousBall.isWicket && !payload.wicket ? 0 : battingStats.striker.runs || 0) +
                             ((newStats.batsman?.runs || 0) - (previousUpdation.batsman?.runs || 0)),
                         ballsFaced:
                             (battingStats.nonstriker?.ballsFaced || 0) -
-                            (battingStats.striker.ballsFaced || 0) +
+                            (previousBall.isWicket && !payload.wicket ? 0 : battingStats.striker.ballsFaced || 0) +
                             ballsDiff,
                     },
                     $set: {
-                        isStriker: lastBallLegalRuns === null ? true : lastBallLegalRuns % 2 ? false : true,
+                        isStriker:
+                            previousBall.isWicket && !payload.wicket
+                                ? true
+                                : lastBallLegalRuns === null
+                                ? true
+                                : lastBallLegalRuns % 2
+                                ? false
+                                : true,
+                        isBatting: true,
                     },
                 }
             );
@@ -405,7 +462,14 @@ export const EditStats = async (req: Request, res: Response) => {
                         ballsFaced: updateBalls,
                     },
                     $set: {
-                        isStriker: lastBallLegalRuns === null ? false : lastBallLegalRuns % 2 ? true : false,
+                        isStriker:
+                            previousBall.isWicket && !payload.wicket
+                                ? false
+                                : lastBallLegalRuns === null
+                                ? false
+                                : lastBallLegalRuns % 2
+                                ? true
+                                : false,
                     },
                 }
             );
@@ -419,6 +483,7 @@ export const EditStats = async (req: Request, res: Response) => {
                 $inc: {
                     runs: (newStats.bowler?.runs || 0) - (previousUpdation.bowler?.runs || 0),
                     ballsFaced: isBallUp && isExtrasToggle ? 1 : isBallDown && isExtrasToggle ? -1 : 0,
+                    wickets: previousBall.isWicket && !payload.wicket ? -1 : 0,
                 },
             }
         );
@@ -433,6 +498,7 @@ export const EditStats = async (req: Request, res: Response) => {
                 },
                 $inc: {
                     balls: newTeamStats.balls || 0, // Update the balls faced
+                    wickets: previousBall.isWicket && !payload.wicket ? -1 : 0,
                     wides:
                         previousBall.payload.wide && !payload.wide
                             ? -previousBall.runs
@@ -534,6 +600,7 @@ export async function ResetScoreBoard(req: Request, res: Response) {
                     byes: 0,
                     overthrows: 0,
                     deliveries: 0,
+                    wickets: 0,
                 },
             }
         );
@@ -545,6 +612,7 @@ export async function ResetScoreBoard(req: Request, res: Response) {
                 ballsFaced: 0,
                 wides: 0,
                 legbyes: 0,
+                wickets: 0,
                 byes: 0,
             }
         );

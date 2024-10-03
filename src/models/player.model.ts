@@ -21,6 +21,7 @@ export interface IPlayer {
     isStriker: boolean;
     isNonStriker: boolean;
     isBowler: boolean;
+    isBatting: boolean;
 }
 
 export interface IPlayerDoc extends IPlayer, Document {}
@@ -57,6 +58,7 @@ const PlayerSchema = new Schema({
     isStriker: Boolean,
     isNonStriker: Boolean,
     isBowler: Boolean,
+    isBatting: Boolean
 });
 
 // Export the Player model

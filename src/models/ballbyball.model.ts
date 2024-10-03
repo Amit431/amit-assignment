@@ -21,6 +21,7 @@ export interface IBallByBall extends Document {
     // };
     legalRuns: number;
     outBatsmanId: mongoose.Types.ObjectId;
+    nextBatsmanId: mongoose.Types.ObjectId;
     bowlerId: mongoose.Types.ObjectId;
     bowlerName: mongoose.Types.ObjectId;
     runs: number;
@@ -30,6 +31,7 @@ export interface IBallByBall extends Document {
     payload: IStatsPayload;
     isStrikerChanged: boolean;
     delivery: number;
+    isWicket: boolean;
 }
 
 const BallByBallSchema = new Schema(
@@ -53,6 +55,7 @@ const BallByBallSchema = new Schema(
         },
         nonStrikerBatsmanName: String,
         outBatsmanId: { type: Schema.Types.ObjectId, ref: "Player" },
+        nextBatsmanId: { type: Schema.Types.ObjectId, ref: "Player" },
         bowlerId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
         bowlerName: String,
         runs: { type: Number, required: true },

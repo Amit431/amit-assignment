@@ -2,8 +2,11 @@ import { IStatsPayload } from "../controllers/updateStats.controller";
 import { BallType, NoBallScenarios, WideScenarios } from "../interface";
 
 export const findBallTypeScenario = (statsPayload: IStatsPayload): string => {
-    const { normal, noball, legbye, byes, overthrow, wide } = statsPayload;
+    const { normal, noball, legbye, byes, overthrow, wide, wicket } = statsPayload;
 
+    if(wicket)
+        return BallType.WICKET;
+    
     // Check for Wide scenario
     if (wide) {
         if (overthrow > 0) {

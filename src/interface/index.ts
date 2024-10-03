@@ -19,4 +19,5 @@ export enum BallType {
     BYE = "bye",
     OVERTHROW = "overthrow",
     NORMAL = "normal",
+    WICKET = "wicket",
 }

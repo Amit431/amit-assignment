@@ -69,6 +69,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
                 noballs: payload.noball ? 1 : 0,
                 byes: payload.byes ? legalRuns : 0,
                 // overthrows: payload.overthrow !== -1 ? payload.overthrow : 0,
+                wickets: payload.wicket ? updation.team.wickets : 0,
                 deliveries: 1,
             },
             $set: {
@@ -81,53 +82,66 @@ export const updateStats = async (input: IStatsReqPayload) => {
     isStriker = isOverComplete ? !isStriker : isStriker;
 
     // Update batsman stats
-    // Efficiently update batsman, non-striker, and bowler using bulkWrite
-    const bulkOps = [
-        {
-            updateOne: {
-                filter: { _id: strikerId },
-                update: {
-                    $inc: {
-                        runs: updation.batsman?.runs || 0,
-                        ballsFaced: updation.batsman?.ballsFaced || 0,
-                        wides: updation.batsman?.wides || 0,
-                        legbyes: updation.batsman?.legbyes || 0,
-                        byes: updation.batsman?.byes || 0,
-                    },
-                    $set: {
-                        isStriker: isStriker,
-                    },
-                },
-            },
-        },
-        {
-            updateOne: {
-                filter: { _id: nonStrikerId },
-                update: {
-                    $set: {
-                        isStriker: !isStriker,
-                    },
-                },
-            },
-        },
-        {
-            updateOne: {
-                filter: { _id: bowlerId },
-                update: {
-                    $inc: {
-                        runs: updation.bowler?.runs || 0,
-                        ballsFaced: updation.bowler?.ballsFaced || 0,
-                        noballs: updation.bowler?.noballs || 0,
-                        wides: updation.bowler?.wides || 0,
-                        byes: updation.bowler?.byes || 0,
-                        legbyes: updation.bowler?.legbyes || 0,
-                    },
-                },
-            },
-        },
-    ];
+    let nextBats = null;
+    if ((updation.team.wickets || 0) > 0) {
+        nextBats = currentInning.toObject().playingXI[(currentInning?.wickets || 0) + 2];
 
-    await Player.bulkWrite(bulkOps);
+        await Player.findOneAndUpdate(
+            { _id: nextBats },
+            {
+                $set: {
+                    isStriker: true,
+                    isBatting: true,
+                },
+            }
+        );
+    }
+
+    await Player.findOneAndUpdate(
+        {
+            _id: strikerId,
+        },
+        {
+            $inc: {
+                runs: updation.batsman?.runs || 0,
+                ballsFaced: updation.batsman?.ballsFaced || 0,
+                wides: updation.batsman?.wides || 0,
+                legbyes: updation.batsman?.legbyes || 0,
+                byes: updation.batsman?.byes || 0,
+            },
+            $set: {
+                isStriker: updation.team.wickets ? false : isStriker,
+                ...(updation.team.wickets ? { isBatting: false } : {}),
+            },
+        }
+    );
+
+    await Player.findOneAndUpdate(
+        {
+            _id: nonStrikerId,
+        },
+        {
+            $set: {
+                isStriker: updation.team.wickets ? false : !isStriker,
+            },
+        }
+    );
+
+    // Update bowler stats
+    await Player.findOneAndUpdate(
+        { _id: bowlerId },
+        {
+            $inc: {
+                runs: updation.bowler?.runs || 0,
+                ballsFaced: updation.bowler?.ballsFaced || 0,
+                noballs: updation.bowler?.noballs || 0,
+                wides: updation.bowler?.wides || 0,
+                byes: updation.bowler?.byes || 0,
+                legbyes: updation.bowler?.legbyes || 0,
+                wickets: updation.bowler?.wickets || 0,
+            },
+        }
+    );
 
     // Example values for inning, over, and delivery
     const inning = currentInning.inningsType === "first" ? 1 : 2; // or however you define innings
@@ -160,7 +174,7 @@ export const updateStats = async (input: IStatsReqPayload) => {
         ballType: ballType,
         commentary: `${updation.team.runs} ${ballType !== BallType.NORMAL ? "runs" : ""} (${
             mapString[ballType as string] || ballType
-        }, ${payload.overthrow > -1 ? `OT: ${payload.overthrow}` : ""}) scored`,
+        }${payload.overthrow > -1 ? `, OT: ${payload.overthrow}` : ""}) scored`,
         payload,
         isStrikerChanged: !isStriker,
         strikerBatsmanStats: {
@@ -169,6 +183,9 @@ export const updateStats = async (input: IStatsReqPayload) => {
         },
         legalRuns,
         delivery,
+        isWicket: payload.wicket,
+        ...((updation.team?.wickets || 0) > 0 ? { outBatsmanId: strikerId } : {}),
+        ...((updation.team?.wickets || 0) > 0 ? { nextBatsmanId: nextBats } : {}),
     });
 
     return { batsman, bowler, match };
