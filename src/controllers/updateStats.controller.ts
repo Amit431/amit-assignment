@@ -236,20 +236,20 @@ export const EditStats = async (req: Request, res: Response) => {
             // Update Over
             if (previousBallType !== newBallType && index === 0) {
                 if (
-                    [BallType.BYE, BallType.LEG_BYE, BallType.NORMAL, BallType.OVERTHROW].includes(
+                    [BallType.BYE, BallType.LEG_BYE, BallType.NORMAL, BallType.OVERTHROW, BallType.WICKET].includes(
                         previousBallType as (typeof BallType)[keyof typeof BallType]
                     ) &&
-                    ![BallType.BYE, BallType.LEG_BYE, BallType.NORMAL, BallType.OVERTHROW].includes(
+                    ![BallType.BYE, BallType.LEG_BYE, BallType.NORMAL, BallType.OVERTHROW, BallType.WICKET].includes(
                         newBallType as (typeof BallType)[keyof typeof BallType]
                     )
                 ) {
                     ballByBallUpdatedOver = addOversV2(previousBall.over || "0.0", "0.1", true);
                     overProgress = 1;
                 } else if (
-                    [BallType.BYE, BallType.LEG_BYE, BallType.NORMAL, BallType.OVERTHROW].includes(
+                    [BallType.BYE, BallType.LEG_BYE, BallType.NORMAL, BallType.OVERTHROW, BallType.WICKET].includes(
                         newBallType as (typeof BallType)[keyof typeof BallType]
                     ) &&
-                    ![BallType.BYE, BallType.LEG_BYE, BallType.NORMAL, BallType.OVERTHROW].includes(
+                    ![BallType.BYE, BallType.LEG_BYE, BallType.NORMAL, BallType.OVERTHROW, BallType.WICKET].includes(
                         previousBallType as (typeof BallType)[keyof typeof BallType]
                     )
                 ) {
@@ -344,7 +344,7 @@ export const EditStats = async (req: Request, res: Response) => {
                           commentary: `${newStats.team.runs} ${newBallType !== BallType.NORMAL ? "runs" : ""} (${
                               mapString[newBallType as string] || newBallType
                           }${payload.overthrow > -1 ? `, OT: ${payload.overthrow}` : ""}) scored`,
-                          isWicket: payload.wicket ? true : newStats.team.wickets,
+                          isWicket: payload.wicket ? true : false,
                           outBatsmanId: !payload.wicket ? null : previousBall.strikerBatsmanId,
                       }
                     : {}),
@@ -359,8 +359,6 @@ export const EditStats = async (req: Request, res: Response) => {
         const isBallDown = Number(finalOvers) < Number(currentInning.overs);
 
         const ballsDiff = wideBallUp ? -1 : wideBallDown ? 1 : 0;
-
-        console.log({ battingStats });
 
         if (!isBatsmanStrikeSwap && balls.length === 1) {
             await Player.updateOne(
@@ -403,7 +401,6 @@ export const EditStats = async (req: Request, res: Response) => {
         } else {
             if (previousBall.isWicket && !payload.wicket) {
                 const nextBats = currentInning.toObject().playingXI[(currentInning?.wickets || 0) + 1];
-                console.log(nextBats);
 
                 await Player.updateOne(
                     {
