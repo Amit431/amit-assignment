@@ -652,7 +652,7 @@ export async function ResetScoreBoard(req: Request, res: Response) {
                 legbyes: 0,
                 wickets: 0,
                 byes: 0,
-                noballs: 0
+                noballs: 0,
             }
         );
 
@@ -660,6 +660,38 @@ export async function ResetScoreBoard(req: Request, res: Response) {
 
         res.json({ msg: "ok" });
     } catch (error) {
+        const { message } = error as Error;
+        res.status(500).json({ error: message });
+    }
+}
+
+export async function changeBowler(req: Request, res: Response) {
+    try {
+        const { matchId, bowlerId } = req.params;
+
+        // Perform bulk write to update two players at once
+        await Player.bulkWrite([
+            // Find the current bowler (where isBowling is true) and set isBowling to false
+            {
+                updateOne: {
+                    filter: { isBowling: true },
+                    update: { $set: { isBowling: false } },
+                },
+            },
+            // Set the new bowler (by bowlerId) and set isBowling to true
+            {
+                updateOne: {
+                    filter: { _id: bowlerId },
+                    update: { $set: { isBowling: true } },
+                },
+            },
+        ]);
+
+        res.json({
+            msg: "ök",
+        });
+    } catch (error) {
+        console.log(error);
         const { message } = error as Error;
         res.status(500).json({ error: message });
     }

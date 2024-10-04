@@ -5,6 +5,7 @@ import {
     EditStats,
     ToggleStrike,
     ResetScoreBoard,
+    changeBowler
 } from "../controllers/updateStats.controller";
 
 const router = Router();
@@ -26,5 +27,7 @@ router.post("/match/:matchId/update-stats", handleUpdateStats);
 router.get("/match/:matchId/scoreboard", fetchScoreBoard);
 
 router.delete("/match/:matchId/reset", ResetScoreBoard);
+
+router.get("/match/select/:matchId/:bowlerId", changeBowler);
 
 export default router;

@@ -60,7 +60,10 @@ const PlayerSchema = new Schema({
     isNonStriker: Boolean,
     isBowler: Boolean,
     isBatting: Boolean,
-    isBowling: Boolean,
+    isBowling: {
+        type: Boolean,
+        index: 1,
+    },
 });
 
 // Export the Player model
