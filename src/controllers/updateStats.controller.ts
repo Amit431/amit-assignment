@@ -61,6 +61,7 @@ export interface IScoreCard {
     remainingBatsman: Partial<IPlayer>[];
     bowlers: Partial<IPlayer>[];
     ballbyball: Partial<IBallByBall[]>;
+    isOverEnd: boolean;
 }
 
 export const fetchScoreBoard = async (req: Request, res: Response) => {
@@ -82,6 +83,7 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
             remainingBatsman: [],
             bowlers: [],
             ballbyball: [],
+            isOverEnd: false,
         };
 
         // Reduce over the innings array and populate the scorecard
@@ -122,6 +124,11 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
             .limit(20)
             .lean()
             .exec();
+        const latestBall = ballbyball[0];
+
+        if (latestBall) {
+            scorecard.isOverEnd = Number(latestBall.over.split(".")[1]) === 6;
+        }
 
         scorecard.ballbyball = ballbyball;
 
@@ -645,6 +652,7 @@ export async function ResetScoreBoard(req: Request, res: Response) {
                 legbyes: 0,
                 wickets: 0,
                 byes: 0,
+                noballs: 0
             }
         );
 
