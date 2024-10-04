@@ -59,7 +59,7 @@ export interface IScoreCard {
     strikerBatsman: Partial<IPlayer>;
     nonStrikerBatsman: Partial<IPlayer>;
     remainingBatsman: Partial<IPlayer>[];
-    bowler: Partial<IPlayer>;
+    bowlers: Partial<IPlayer>[];
     ballbyball: Partial<IBallByBall[]>;
 }
 
@@ -80,7 +80,7 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
             strikerBatsman: {},
             nonStrikerBatsman: {},
             remainingBatsman: [],
-            bowler: {},
+            bowlers: [],
             ballbyball: [],
         };
 
@@ -104,14 +104,15 @@ export const fetchScoreBoard = async (req: Request, res: Response) => {
             }
 
             if (inning.bowlers?.length > 0) {
-                const bowler = (inning.bowlers?.find((player) => (player as IPlayer).isBowler) as IPlayer) || {};
+                const bowlers: IPlayer[] =
+                    (inning.bowlers?.filter((player) => (player as IPlayer).isBowler) as IPlayer[]) || [];
 
-                scorecard.bowler = {
+                scorecard.bowlers = bowlers.map((bowler) => ({
                     ...bowler,
                     overs: `${bowler.ballsFaced < 6 ? 0 : Math.trunc((bowler.ballsFaced || 0) / 6)}.${
                         (bowler.ballsFaced || 0) % 6
                     }`,
-                } as Partial<IPlayer>;
+                }));
             }
         });
 
@@ -384,8 +385,6 @@ export const EditStats = async (req: Request, res: Response) => {
                 currentInning.toObject().playingXI[
                     ((currentInning?.wickets || 0) + 2) % currentInning.toObject().playingXI.length
                 ];
-
-            console.log(nextBats);
 
             nextBats &&
                 (await Player.updateOne(
