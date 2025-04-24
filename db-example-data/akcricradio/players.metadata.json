@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"isBowling":{"$numberInt":"1"}},"name":"isBowling_1","background":true}],"uuid":"f9a220e81a994ddabba5da66fe3ab634","collectionName":"players","type":"collection"}
